@@ -1,3 +1,0 @@
-/home/leon/Documentos/UNSA/TOPICOS IA/VIT/build/CMakeFiles/main.dir
-/home/leon/Documentos/UNSA/TOPICOS IA/VIT/build/CMakeFiles/edit_cache.dir
-/home/leon/Documentos/UNSA/TOPICOS IA/VIT/build/CMakeFiles/rebuild_cache.dir
