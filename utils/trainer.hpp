@@ -105,7 +105,7 @@ public:
       std::cout << std::fixed << std::setprecision(4);
       std::cout << "Train Loss: " << (epoch_loss / batches)
                 << " | Accuracy: " << (epoch_acc / batches) * 100.0f << "%"
-                << " | Time: " << duration.count() << " ms\n";
+                << " | Time: " << duration.count() << " s\n";
 
       evaluate();
     }
