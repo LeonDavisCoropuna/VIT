@@ -163,4 +163,8 @@ public:
     index = 0;
     std::shuffle(indices.begin(), indices.end(), rng);
   }
+  size_t total_batches() const
+  {
+    return (images.size() + batch_size - 1) / batch_size;
+  }
 };

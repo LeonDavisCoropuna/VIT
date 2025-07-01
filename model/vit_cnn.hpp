@@ -86,18 +86,13 @@ public:
     fc = new DenseLayer(8 * 14 * 14, num_classes);
     softmax = new SoftmaxLayer();
 
-    if (conv_layer->has_weights())
-      conv_layer->set_optimizer(new SGD(0.001f));
-    if (bn->has_weights())
-      bn->set_optimizer(new SGD(0.001f));
+    conv_layer->set_optimizer(new SGD(0.001f));
+    bn->set_optimizer(new SGD(0.001f));
     for (auto *vt : vt_layers)
       if (vt->has_weights())
         vt->set_optimizer(new SGD(0.001f));
-    if (fc->has_weights())
-      fc->set_optimizer(new SGD(0.001f));
-    // Si el softmax también tiene pesos (usualmente no)
-    if (softmax->has_weights())
-      softmax->set_optimizer(new SGD(0.001f));
+    fc->set_optimizer(new SGD(0.001f));
+    softmax->set_optimizer(new SGD(0.001f));
   }
 
   Tensor forward(const Tensor &input) override

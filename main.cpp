@@ -25,7 +25,7 @@ int main()
   // MLP vt_cnn;
   int batch_size = 128;
   int num_classes = 10;
-  int max_samples = 4096;
+  int max_samples = 512;
   std::string path = "/home/leon/Documentos/UNSA/TOPICOS IA/MLP-Multi-Layer-Perceptron/mnist_data/";
 
   Dataset dataset_train = load_dataset(path + "train-images.idx3-ubyte",

@@ -18,15 +18,10 @@ if(OpenMP_FOUND)
   message(STATUS "OpenMP found: ${OpenMP_CXX_FLAGS}")
 endif()
 
-# Ruta de OpenCV (ajústala si es necesario)
-set(OpenCV_DIR "/home/leon/Documentos/UNSA/TOPICOS IA/opencv/build")
-find_package(OpenCV REQUIRED)
-
 # Incluye tus directorios
 include_directories(
   ${CMAKE_SOURCE_DIR}/models
   ${CMAKE_SOURCE_DIR}/utils
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 # Archivos fuente
@@ -47,8 +42,5 @@ if(OpenMP_FOUND)
   target_link_libraries(main PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-# Enlace de OpenCV
-target_link_libraries(main PRIVATE ${OpenCV_LIBS})
-
-# Warnings útiles
+# Warnings útiles (puedes agregar más si deseas)
 target_compile_options(main PRIVATE)

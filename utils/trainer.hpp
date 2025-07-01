@@ -4,6 +4,7 @@
 #include "../model/model.hpp"
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 
 class Trainer
 {
@@ -57,8 +58,6 @@ public:
 
     return loss / B;
   }
-#include <chrono>
-#include <iomanip>
 
   void train(int epochs)
   {
@@ -73,6 +72,8 @@ public:
       float epoch_loss = 0.0f;
       float epoch_acc = 0.0f;
       int batches = 0;
+
+      int total_batches = train_loader.total_batches();
 
       while (train_loader.has_next())
       {
@@ -90,11 +91,15 @@ public:
         epoch_loss += batch_loss;
         epoch_acc += batch_acc;
         ++batches;
+
+        std::cout << "  Batch " << batches << "/" << total_batches
+                  << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
+                  << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
       }
 
       // Calcular tiempo transcurrido
       auto end_time = std::chrono::high_resolution_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+      std::chrono::duration<double> duration = end_time - start_time;
 
       // Mostrar resultados
       std::cout << std::fixed << std::setprecision(4);

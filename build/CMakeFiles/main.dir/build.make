@@ -92,23 +92,8 @@ main_EXTERNAL_OBJECTS =
 
 main: CMakeFiles/main.dir/main.cpp.o
 main: CMakeFiles/main.dir/build.make
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_gapi.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_highgui.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_ml.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_objdetect.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_photo.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_stitching.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_video.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_videoio.so.4.12.0
 main: /usr/lib/gcc/x86_64-linux-gnu/11/libgomp.so
 main: /usr/lib/x86_64-linux-gnu/libpthread.a
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_imgcodecs.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_dnn.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_calib3d.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_features2d.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_flann.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_imgproc.so.4.12.0
-main: /home/leon/Documentos/UNSA/TOPICOS\ IA/opencv/build/lib/libopencv_core.so.4.12.0
 main: CMakeFiles/main.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/home/leon/Documentos/UNSA/TOPICOS IA/VIT/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable main"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=$(VERBOSE)
