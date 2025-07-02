@@ -49,7 +49,7 @@ public:
       throw std::runtime_error("Unknown tokenizer type: " + tokenizer_type);
     }
 
-    transformer = new TransformerLayer(token_channels, attn_dim);
+    transformer = new TransformerLayer(token_channels, attn_dim, transformer_heads);
 
     if (is_projected)
     {

@@ -94,6 +94,89 @@ public:
     return Tensor(new_shape, new_data);
   }
 
+  Tensor slice(const std::vector<int> &starts, const std::vector<int> &ends) const
+  {
+    assert(starts.size() == shape.size());
+    assert(ends.size() == shape.size());
+
+    // Verificar límites y calcular nueva forma
+    std::vector<int> new_shape;
+    for (size_t i = 0; i < shape.size(); ++i)
+    {
+      assert(starts[i] >= 0 && ends[i] <= shape[i] && starts[i] < ends[i]);
+      new_shape.push_back(ends[i] - starts[i]);
+    }
+
+    // Calcular strides para la forma original
+    std::vector<int> strides(shape.size(), 1);
+    for (int i = shape.size() - 2; i >= 0; --i)
+    {
+      strides[i] = strides[i + 1] * shape[i + 1];
+    }
+
+    // Calcular tamaño del nuevo tensor
+    int total_size = 1;
+    for (int dim : new_shape)
+    {
+      total_size *= dim;
+    }
+    std::vector<float> new_data(total_size);
+
+// Copiar datos
+#pragma omp parallel for collapse(3) schedule(static)
+    for (int b = starts[0]; b < ends[0]; ++b)
+    {
+      for (int t = starts[1]; t < ends[1]; ++t)
+      {
+        for (int d = starts[2]; d < ends[2]; ++d)
+        {
+          int old_idx = b * strides[0] + t * strides[1] + d * strides[2];
+          int new_idx = (b - starts[0]) * (new_shape[1] * new_shape[2]) +
+                        (t - starts[1]) * new_shape[2] +
+                        (d - starts[2]);
+          new_data[new_idx] = data[old_idx];
+        }
+      }
+    }
+
+    return Tensor(new_shape, new_data);
+  }
+
+  static Tensor concat(const std::vector<Tensor>& tensors, int dim) {
+    assert(!tensors.empty());
+    
+    // Verificar que todas las formas son compatibles excepto en 'dim'
+    std::vector<int> new_shape = tensors[0].shape;
+    int concat_dim_size = new_shape[dim];
+    
+    for (size_t i = 1; i < tensors.size(); ++i) {
+        assert(tensors[i].shape.size() == new_shape.size());
+        for (size_t j = 0; j < new_shape.size(); ++j) {
+            if (j != dim) {
+                assert(tensors[i].shape[j] == new_shape[j]);
+            }
+        }
+        concat_dim_size += tensors[i].shape[dim];
+    }
+    
+    new_shape[dim] = concat_dim_size;
+    Tensor result(new_shape);
+    
+    // Copiar datos
+    int offset = 0;
+    for (const auto& tensor : tensors) {
+        std::vector<int> starts(result.shape.size(), 0);
+        std::vector<int> ends = result.shape;
+        starts[dim] = offset;
+        ends[dim] = offset + tensor.shape[dim];
+        
+        result.slice(starts, ends) = tensor;
+        offset += tensor.shape[dim];
+    }
+    
+    return result;
+}
+
   Tensor pad(const std::vector<int> &pads) const
   {
     assert(shape.size() == 4); // Suponemos formato [N, C, H, W]
