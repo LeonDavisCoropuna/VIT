@@ -13,19 +13,19 @@ int main()
       /* input_dim             */ 28,  // Ancho/alto de entrada (28x28)
       /* vt_layers_num         */ 1,   // Número de capas VisualTransformer (puedes variar)
       /* tokens                */ 16,  // Número de tokens visuales
-      /* token_channels        */ 16,  // Dimensión de cada token
-      /* vt_channels           */ 8,   // Salida de cada capa VT (C)
+      /* token_channels        */ 32,  // Dimensión de cada token
+      /* vt_channels           */ 16,  // Salida de cada capa VT (C)
       /* transformer_enc_layers*/ 2,   // Capas encoder del transformer interno
       /* transformer_heads     */ 2,   // Número de cabezas de atención
       /* transformer_fc_dim    */ 64,  // Dimensión FC del Transformer
       /* transformer_dropout   */ 0.1, // Dropout en Transformer
-      /* num_classes           */ 10    // Para clasificación binaria (sandal vs sneaker)
+      /* num_classes           */ 10   // Para clasificación binaria (sandal vs sneaker)
   );
 
   // MLP vt_cnn;
-  int batch_size = 128;
+  int batch_size = 79;
   int num_classes = 10;
-  int max_samples = 512;
+  int max_samples = 60000;
   std::string path = "/home/leon/Documentos/UNSA/TOPICOS IA/MLP-Multi-Layer-Perceptron/mnist_data/";
 
   Dataset dataset_train = load_dataset(path + "train-images.idx3-ubyte",
@@ -34,13 +34,13 @@ int main()
 
   Dataset dataset_val = load_dataset(path + "t10k-images.idx3-ubyte",
                                      path + "t10k-labels.idx1-ubyte",
-                                     512);
+                                     7777);
 
   DataLoader train_loader(dataset_train.images, dataset_train.labels, batch_size);
   DataLoader val_loader(dataset_val.images, dataset_val.labels, batch_size);
 
   Trainer trainer(vt_cnn, train_loader, val_loader, num_classes, batch_size);
 
-  trainer.train(10);
+  trainer.train(/*epochs=*/10, /*log_every=*/50);
   return 0;
 }

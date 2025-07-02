@@ -59,13 +59,11 @@ public:
     return loss / B;
   }
 
-  void train(int epochs)
+  void train(int epochs, int log_every)
   {
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
-      // Registrar tiempo de inicio
       auto start_time = std::chrono::high_resolution_clock::now();
-
       std::cout << "Epoch " << (epoch + 1) << "/" << epochs << "\n";
       train_loader.reset();
 
@@ -92,16 +90,18 @@ public:
         epoch_acc += batch_acc;
         ++batches;
 
-        std::cout << "  Batch " << batches << "/" << total_batches
-                  << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
-                  << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
+        // Solo imprime si toca
+        if (log_every > 0 && batches % log_every == 0)
+        {
+          std::cout << "  Batch " << batches << "/" << total_batches
+                    << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
+                    << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
+        }
       }
 
-      // Calcular tiempo transcurrido
       auto end_time = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> duration = end_time - start_time;
 
-      // Mostrar resultados
       std::cout << std::fixed << std::setprecision(4);
       std::cout << "Train Loss: " << (epoch_loss / batches)
                 << " | Accuracy: " << (epoch_acc / batches) * 100.0f << "%"
@@ -110,6 +110,7 @@ public:
       evaluate();
     }
   }
+
   void evaluate()
   {
     val_loader.reset();

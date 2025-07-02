@@ -29,6 +29,11 @@ private:
   int vt_layers_num;
   int vt_layer_res;
 
+  int N;
+  int C;
+  int H;
+  int W;
+
 public:
   VTCNN(
       int image_channels,
@@ -83,7 +88,7 @@ public:
 
     avgpool = new MaxPool2DLayer(vt_layer_res, vt_layer_res);
     flatten = new FlattenLayer();
-    fc = new DenseLayer(8 * 14 * 14, num_classes);
+    fc = new DenseLayer(vt_channels * 14 * 14, num_classes);
     softmax = new SoftmaxLayer();
 
     conv_layer->set_optimizer(new SGD(0.001f));
@@ -100,10 +105,10 @@ public:
     Tensor x = conv_layer->forward({input})[0]; // [32, 4, 28, 28] ← Conv2D: 1 canal → 4
     x = bn->forward({x})[0];                    // [32, 4, 28, 28] ← BatchNorm2D
 
-    int N = x.shape[0]; // N = 32
-    int C = x.shape[1]; // C = 4
-    int H = x.shape[2]; // H = 28
-    int W = x.shape[3]; // W = 28
+    N = x.shape[0]; // N = 32
+    C = x.shape[1]; // C = 4
+    H = x.shape[2]; // H = 28
+    W = x.shape[3]; // W = 28
 
     x = x.flatten(2);           // [32, 4, 784] ← HW = 28×28 = 784
     x = x.transpose({0, 2, 1}); // [32, 784, 4] ← (N, HW, C)
@@ -153,7 +158,7 @@ public:
 
     // Reshape a formato BatchNorm2D [N, C, H, W]
     Tensor bn_deltas = vt_deltas.transpose({0, 2, 1})  // [128, 4, 784]
-                           .reshape({128, 4, 28, 28}); // [128, 4, 28, 28]
+                           .reshape({N, C, H, W}); // [128, 4, 28, 28]
     bn->backward(&bn_deltas, nullptr);
 
     // conv_layer recibe como siguiente capa a bn
