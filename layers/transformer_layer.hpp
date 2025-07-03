@@ -1,9 +1,5 @@
 #pragma once
-#include "layer.hpp"
-#include "dense_layer.hpp"
-#include "batch_normalization_layer.hpp"
-#include "../utils/tensor.hpp"
-#include "multi_head_attention.hpp"
+#include "all_layers.hpp"
 
 class TransformerLayer : public Layer
 {

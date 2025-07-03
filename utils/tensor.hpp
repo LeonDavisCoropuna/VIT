@@ -142,40 +142,45 @@ public:
     return Tensor(new_shape, new_data);
   }
 
-  static Tensor concat(const std::vector<Tensor>& tensors, int dim) {
+  static Tensor concat(const std::vector<Tensor> &tensors, int dim)
+  {
     assert(!tensors.empty());
-    
+
     // Verificar que todas las formas son compatibles excepto en 'dim'
     std::vector<int> new_shape = tensors[0].shape;
     int concat_dim_size = new_shape[dim];
-    
-    for (size_t i = 1; i < tensors.size(); ++i) {
-        assert(tensors[i].shape.size() == new_shape.size());
-        for (size_t j = 0; j < new_shape.size(); ++j) {
-            if (j != dim) {
-                assert(tensors[i].shape[j] == new_shape[j]);
-            }
+
+    for (size_t i = 1; i < tensors.size(); ++i)
+    {
+      assert(tensors[i].shape.size() == new_shape.size());
+      for (size_t j = 0; j < new_shape.size(); ++j)
+      {
+        if (j != dim)
+        {
+          assert(tensors[i].shape[j] == new_shape[j]);
         }
-        concat_dim_size += tensors[i].shape[dim];
+      }
+      concat_dim_size += tensors[i].shape[dim];
     }
-    
+
     new_shape[dim] = concat_dim_size;
     Tensor result(new_shape);
-    
+
     // Copiar datos
     int offset = 0;
-    for (const auto& tensor : tensors) {
-        std::vector<int> starts(result.shape.size(), 0);
-        std::vector<int> ends = result.shape;
-        starts[dim] = offset;
-        ends[dim] = offset + tensor.shape[dim];
-        
-        result.slice(starts, ends) = tensor;
-        offset += tensor.shape[dim];
+    for (const auto &tensor : tensors)
+    {
+      std::vector<int> starts(result.shape.size(), 0);
+      std::vector<int> ends = result.shape;
+      starts[dim] = offset;
+      ends[dim] = offset + tensor.shape[dim];
+
+      result.slice(starts, ends) = tensor;
+      offset += tensor.shape[dim];
     }
-    
+
     return result;
-}
+  }
 
   Tensor pad(const std::vector<int> &pads) const
   {
@@ -223,61 +228,48 @@ public:
     }
     return data[flat_index];
   }
-
-  // 1D: [D]
-  inline float &at1d(int i)
+  inline float &at(std::initializer_list<int> indices)
   {
-    return data[i];
+    int offset = 0;
+    int stride = 1;
+    int dims = shape.size();
+
+    assert(indices.size() == dims);
+
+    auto idx_it = indices.end();
+    auto shape_it = shape.end();
+
+    for (int i = 0; i < dims; ++i)
+    {
+      --idx_it;
+      --shape_it;
+      offset += (*idx_it) * stride;
+      stride *= *shape_it;
+    }
+
+    return data[offset];
   }
 
-  inline const float &at1d(int i) const
+  inline const float &at(std::initializer_list<int> indices) const
   {
-    return data[i];
-  }
+    int offset = 0;
+    int stride = 1;
+    int dims = shape.size();
 
-  // 2D: [N, D]
-  inline float &at2d(int n, int d)
-  {
-    int D = shape[1];
-    return data[n * D + d];
-  }
+    assert(indices.size() == dims);
 
-  inline const float &at2d(int n, int d) const
-  {
-    int D = shape[1];
-    return data[n * D + d];
-  }
+    auto idx_it = indices.end();
+    auto shape_it = shape.end();
 
-  // 3D: [C, H, W]  (útil para kernels)
-  inline float &at3d(int c, int h, int w)
-  {
-    int H = shape[1];
-    int W = shape[2];
-    return data[(c * H + h) * W + w];
-  }
+    for (int i = 0; i < dims; ++i)
+    {
+      --idx_it;
+      --shape_it;
+      offset += (*idx_it) * stride;
+      stride *= *shape_it;
+    }
 
-  inline const float &at3d(int c, int h, int w) const
-  {
-    int H = shape[1];
-    int W = shape[2];
-    return data[(c * H + h) * W + w];
-  }
-
-  // 4D: [N, C, H, W]
-  inline float &at4d(int n, int c, int h, int w)
-  {
-    int C = shape[1];
-    int H = shape[2];
-    int W = shape[3];
-    return data[((n * C + c) * H + h) * W + w];
-  }
-
-  inline const float &at4d(int n, int c, int h, int w) const
-  {
-    int C = shape[1];
-    int H = shape[2];
-    int W = shape[3];
-    return data[((n * C + c) * H + h) * W + w];
+    return data[offset];
   }
 
   Tensor flatten(int start_dim) const
@@ -381,8 +373,6 @@ public:
   {
     std::fill(data.begin(), data.end(), value);
   }
-
-  // -------------------- Reducción --------------------
   Tensor sum(int axis, bool keepdims = false) const
   {
     if (axis < 0)
@@ -394,27 +384,25 @@ public:
       int cols = shape[1];
       Tensor result({cols});
 
-// Inicialización a cero en paralelo
+      // Inicialización a cero en paralelo
 #pragma omp parallel for
       for (int j = 0; j < cols; ++j)
-        result.data[j] = 0.0f;
+        result.at({j}) = 0.0f;
 
-// Suma por columnas con reducción manual
+      // Suma por columnas con reducción manual
 #pragma omp parallel
       {
-        // Cada hilo tiene su propio array temporal
         std::vector<float> local_sum(cols, 0.0f);
 
 #pragma omp for nowait
         for (int i = 0; i < rows; ++i)
           for (int j = 0; j < cols; ++j)
-            local_sum[j] += data[i * cols + j];
+            local_sum[j] += this->at({i, j});
 
-// Combinar resultados
 #pragma omp critical
         {
           for (int j = 0; j < cols; ++j)
-            result.data[j] += local_sum[j];
+            result.at({j}) += local_sum[j];
         }
       }
 
@@ -430,13 +418,13 @@ public:
       int L = shape[2];
       Tensor result({N, HW});
 
-// Inicialización a cero
+      // Inicialización a cero
 #pragma omp parallel for collapse(2)
       for (int n = 0; n < N; ++n)
         for (int hw = 0; hw < HW; ++hw)
-          result.at2d(n, hw) = 0.0f;
+          result.at({n, hw}) = 0.0f;
 
-// Suma reducción por el último eje
+      // Reducción por el último eje
 #pragma omp parallel for collapse(2)
       for (int n = 0; n < N; ++n)
       {
@@ -446,9 +434,9 @@ public:
 #pragma omp simd reduction(+ : sum)
           for (int l = 0; l < L; ++l)
           {
-            sum += this->at3d(n, hw, l);
+            sum += this->at({n, hw, l});
           }
-          result.at2d(n, hw) = sum;
+          result.at({n, hw}) = sum;
         }
       }
 
@@ -653,7 +641,6 @@ public:
     int cols = shape[1];
     Tensor result({cols, rows});
 
-#pragma omp parallel for collapse(2) schedule(static)
     for (int i = 0; i < rows; ++i)
     {
       for (int j = 0; j < cols; ++j)
@@ -676,13 +663,15 @@ public:
 
     // Cálculo de strides (igual que antes)
     std::vector<int> old_strides(shape.size());
-    std::vector<int> new_strides(shape.size());
     old_strides.back() = 1;
     for (int i = shape.size() - 2; i >= 0; --i)
       old_strides[i] = old_strides[i + 1] * shape[i + 1];
 
-    for (size_t i = 0; i < shape.size(); ++i)
-      new_strides[i] = old_strides[axes[i]];
+    // Cálculo de strides del tensor transpuesto
+    std::vector<int> new_strides(shape.size());
+    new_strides.back() = 1;
+    for (int i = new_shape.size() - 2; i >= 0; --i)
+      new_strides[i] = new_strides[i + 1] * new_shape[i + 1];
 
     // Transponer datos (paralelizado)
     Tensor out(new_shape);
@@ -1130,39 +1119,5 @@ public:
   {
     Tensor sum = (delta * softmax).sum(-1, true); // [N, HW, 1]
     return softmax * (delta - sum);
-  }
-
-  int numel() const
-  {
-    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
-  }
-
-  static Tensor repeat_along_axis(const Tensor &input, int axis, int repeats)
-  {
-    // Solo para [N, HW, 1] → [N, HW, repeats]
-    assert(axis == 2 && input.shape[2] == 1);
-    int N = input.shape[0];
-    int HW = input.shape[1];
-
-    Tensor result({N, HW, repeats});
-    for (int n = 0; n < N; ++n)
-      for (int hw = 0; hw < HW; ++hw)
-        for (int r = 0; r < repeats; ++r)
-          result.at3d(n, hw, r) = input.at3d(n, hw, 0);
-
-    return result;
-  }
-
-  // -------------------- Print (debug) --------------------
-  void print_shape(const std::string &name = "") const
-  {
-    std::cout << name << " shape: (";
-    for (size_t i = 0; i < shape.size(); ++i)
-    {
-      std::cout << shape[i];
-      if (i < shape.size() - 1)
-        std::cout << ", ";
-    }
-    std::cout << ")\n";
   }
 };

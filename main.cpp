@@ -23,9 +23,9 @@ int main()
   );
 
   // MLP vt_cnn;
-  int batch_size = 79;
+  int batch_size = 128;
   int num_classes = 10;
-  int max_samples = 60000;
+  int max_samples = 5000;
   std::string path = "/home/leon/Documentos/UNSA/TOPICOS IA/MLP-Multi-Layer-Perceptron/mnist_data/";
 
   Dataset dataset_train = load_dataset(path + "train-images.idx3-ubyte",
@@ -34,13 +34,52 @@ int main()
 
   Dataset dataset_val = load_dataset(path + "t10k-images.idx3-ubyte",
                                      path + "t10k-labels.idx1-ubyte",
-                                     7777);
+                                     1000);
 
   DataLoader train_loader(dataset_train.images, dataset_train.labels, batch_size);
   DataLoader val_loader(dataset_val.images, dataset_val.labels, batch_size);
 
   Trainer trainer(vt_cnn, train_loader, val_loader, num_classes, batch_size);
 
-  trainer.train(/*epochs=*/10, /*log_every=*/50);
+  trainer.train(/*epochs=*/10, /*log_every=*/5);
+
+  // Tensor t({3, 3});
+  // t.data = {1, 2, 3, 4, 5, 6, 7, 8, 9}; // Matriz:
+  //                                       // | 0 1 2 |
+  //                                       // | 3 4 5 |
+
+  // auto t1 = t.transpose({1, 0}); // General
+  // auto t2 = t.transpose(0, 1);   // Optimizada 2D
+
+  // std::cout << "Original: " << std::endl;
+
+  // for (int i = 0; i < t.shape[0]; ++i)
+  // {
+  //   for (int j = 0; j < t.shape[1]; ++j)
+  //   {
+  //     std::cout << t.at({i, j}) << " ";
+  //   }
+  //   std::cout << "\n";
+  // }
+  // std::cout << "T1: " << std::endl;
+
+  // for (int i = 0; i < t1.shape[0]; ++i)
+  // {
+  //   for (int j = 0; j < t1.shape[1]; ++j)
+  //   {
+  //     std::cout << t1.at({i, j}) << " ";
+  //   }
+  //   std::cout << "\n";
+  // }
+  // std::cout << "T2: " << std::endl;
+
+  // for (int i = 0; i < t2.shape[0]; ++i)
+  // {
+  //   for (int j = 0; j < t2.shape[1]; ++j)
+  //   {
+  //     std::cout << t2.at({i, j}) << " ";
+  //   }
+  //   std::cout << "\n";
+  // }
   return 0;
 }

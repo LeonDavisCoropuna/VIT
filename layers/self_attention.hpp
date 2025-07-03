@@ -1,7 +1,5 @@
-#include "layer.hpp"
-#include "dense_layer.hpp"
-#include "batch_normalization_layer.hpp"
-#include "../utils/tensor.hpp"
+#pragma once
+#include "all_layers.hpp"
 
 class SelfAttention : public Layer
 {

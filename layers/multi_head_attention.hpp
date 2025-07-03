@@ -1,7 +1,5 @@
 #pragma once
 #include "layer.hpp"
-#include "dense_layer.hpp"
-#include "../utils/tensor.hpp"
 
 class MultiHeadAttention : public Layer
 {

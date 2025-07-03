@@ -1,15 +1,5 @@
 #pragma once
-#include "layer.hpp"
-#include "projector_layer.hpp"
-#include "tokenizer.hpp"
-#include "transformer_layer.hpp"
-
-#include "../layers/conv2d_layer.hpp"
-#include "../layers/batch_normalization_layer.hpp"
-#include "../layers/visual_transformer.hpp"
-#include "../layers/dense_layer.hpp"
-#include "../layers/pooling_layer.hpp"
-#include "../layers/flatten_layer.hpp"
+#include "all_layers.hpp"
 
 class VisualTransformer : public Layer
 {

@@ -1,6 +1,5 @@
 #pragma once
 #include "layer.hpp"
-#include "../utils/tensor.hpp"
 #include <cmath>
 
 class SoftmaxLayer : public Layer

@@ -1,9 +1,5 @@
 #pragma once
 #include "layer.hpp"
-#include "../utils/tensor.hpp"
-#include "dense_layer.hpp"
-#include "relu_layer.hpp"
-#include "batch_normalization_layer.hpp"
 
 class ProjectorLayer : public Layer
 {

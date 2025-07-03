@@ -1,6 +1,5 @@
 #pragma once
 #include "layer.hpp"
-#include "../utils/tensor.hpp"
 
 class DenseLayer : public Layer
 {
