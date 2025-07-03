@@ -43,43 +43,5 @@ int main()
 
   trainer.train(/*epochs=*/10, /*log_every=*/5);
 
-  // Tensor t({3, 3});
-  // t.data = {1, 2, 3, 4, 5, 6, 7, 8, 9}; // Matriz:
-  //                                       // | 0 1 2 |
-  //                                       // | 3 4 5 |
-
-  // auto t1 = t.transpose({1, 0}); // General
-  // auto t2 = t.transpose(0, 1);   // Optimizada 2D
-
-  // std::cout << "Original: " << std::endl;
-
-  // for (int i = 0; i < t.shape[0]; ++i)
-  // {
-  //   for (int j = 0; j < t.shape[1]; ++j)
-  //   {
-  //     std::cout << t.at({i, j}) << " ";
-  //   }
-  //   std::cout << "\n";
-  // }
-  // std::cout << "T1: " << std::endl;
-
-  // for (int i = 0; i < t1.shape[0]; ++i)
-  // {
-  //   for (int j = 0; j < t1.shape[1]; ++j)
-  //   {
-  //     std::cout << t1.at({i, j}) << " ";
-  //   }
-  //   std::cout << "\n";
-  // }
-  // std::cout << "T2: " << std::endl;
-
-  // for (int i = 0; i < t2.shape[0]; ++i)
-  // {
-  //   for (int j = 0; j < t2.shape[1]; ++j)
-  //   {
-  //     std::cout << t2.at({i, j}) << " ";
-  //   }
-  //   std::cout << "\n";
-  // }
   return 0;
 }
