@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18)  # Versión más reciente para mejor soporte CUDA
 project(mlp LANGUAGES CXX)
 
 option(USE_CUDA "Use CUDA implementation for Tensor" OFF)
@@ -7,51 +7,78 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Configuración de builds
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# OpenMP para paralelización en CPU
 find_package(OpenMP REQUIRED)
-if(OpenMP_FOUND)
-  message(STATUS "OpenMP found: ${OpenMP_CXX_FLAGS}")
-endif()
+message(STATUS "OpenMP found: ${OpenMP_CXX_FLAGS}")
 
-# ==== CUDA SUPPORT ====
+# ==== Configuración avanzada de CUDA ====
 if(USE_CUDA)
-  enable_language(CUDA)  # 👈 importante
-  message(STATUS "✅ CUDA activado")
+  find_package(CUDAToolkit REQUIRED)
+  enable_language(CUDA)
+  
+  # Configuración automática de arquitecturas
+  set(CMAKE_CUDA_ARCHITECTURES "native" CACHE STRING "GPU architectures")
+  
+  # Opciones específicas para CUDA
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --use_fast_math")
+  set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -O3 -DNDEBUG")
+  set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G -O0")
+  
+  message(STATUS "✅ CUDA activado - Versión ${CUDAToolkit_VERSION}")
+  message(STATUS "Arquitecturas CUDA: ${CMAKE_CUDA_ARCHITECTURES}")
 endif()
 
-# Include dirs
+# Configuración de includes
 include_directories(
   ${CMAKE_SOURCE_DIR}/models
   ${CMAKE_SOURCE_DIR}/utils
-  ${CMAKE_SOURCE_DIR}/utils/tensor  # asegúrate de tener esto si usas tensor_cuda
+  ${CMAKE_SOURCE_DIR}/utils/tensor
 )
 
-# Fuente base
-set(SOURCES
+# Fuentes comunes
+set(COMMON_SOURCES
   main.cpp
   layers/layer.hpp
+  utils/tensor.hpp  # Interfaz común CPU/GPU
 )
 
-# Añadir archivos según modo
+# Fuentes específicas
 if(USE_CUDA)
-  list(APPEND SOURCES utils/tensor/tensor_cuda.cu)
+  list(APPEND SOURCES 
+    ${COMMON_SOURCES}
+    utils/tensor/tensor_cuda.cu     # Cambiado de .cuh a .cu
+  )
+  set_source_files_properties(
+    utils/tensor/tensor_cuda.cu
+    PROPERTIES LANGUAGE CUDA
+  )
 else()
-  list(APPEND SOURCES utils/tensor/tensor_cpu.hpp)
+  list(APPEND SOURCES 
+    ${COMMON_SOURCES}
+    utils/tensor/tensor_cpu.hpp    # Implementación CPU
+  )
 endif()
 
 add_executable(main ${SOURCES})
 
-# Flags Release/Debug
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  target_compile_options(main PRIVATE -O3 -march=native -DNDEBUG)
-elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(main PRIVATE -O0 -g)
+# Configuración de flags
+target_compile_options(main PRIVATE
+  $<$<CONFIG:Release>:-O3 -march=native -DNDEBUG>
+  $<$<CONFIG:Debug>:-O0 -g>
+)
+
+# Enlaces
+target_link_libraries(main PRIVATE OpenMP::OpenMP_CXX)
+
+if(USE_CUDA)
+  target_link_libraries(main PRIVATE CUDA::cudart CUDA::cublas)
+  target_compile_definitions(main PRIVATE USE_CUDA=1)
 endif()
 
-# Link OpenMP
-if(OpenMP_FOUND)
-  target_link_libraries(main PRIVATE OpenMP::OpenMP_CXX)
-endif()
+# Instalación de modelos
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/save_models DESTINATION .)
