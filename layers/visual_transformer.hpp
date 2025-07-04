@@ -134,14 +134,14 @@ public:
 
     // Paso 3: Backward del tokenizer
     // Sumamos los deltas que vienen del transformer y los que vienen del projector (si aplica)
-    if (!delta_x.data.empty())
+    if (!delta_x.empty())
     {
       // Si tenemos delta_x del projector, lo pasamos al tokenizer
       // Paso 3: Backward del tokenizer
       if (tokenizer_type == "filter")
       {
         // FilterTokenizer solo necesita delta_x (respecto a la imagen)
-        if (!delta_x.data.empty())
+        if (!delta_x.empty())
         {
           tokenizer->backward2(delta_t, delta_x);
         }

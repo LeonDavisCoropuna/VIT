@@ -21,45 +21,7 @@ public:
       : model(model), train_loader(train_loader), val_loader(val_loader),
         num_classes(num_classes), batch_size(batch_size) {}
 
-  float compute_accuracy(const Tensor &preds, const Tensor &targets)
-  {
-    int correct = 0;
-    int total = preds.shape[0];
-
-    for (int i = 0; i < total; ++i)
-    {
-      int pred_label = std::distance(preds.data.begin() + i * num_classes,
-                                     std::max_element(preds.data.begin() + i * num_classes,
-                                                      preds.data.begin() + (i + 1) * num_classes));
-      int true_label = static_cast<int>(targets.data[i]);
-      if (pred_label == true_label)
-        ++correct;
-    }
-
-    return static_cast<float>(correct) / total;
-  }
-
-  float compute_loss(const Tensor &preds, const Tensor &targets_onehot)
-  {
-    // Cross entropy: -sum(y_true * log(pred)) / B
-    float loss = 0.0f;
-    int B = preds.shape[0];
-    int C = preds.shape[1];
-
-    for (int i = 0; i < B; ++i)
-    {
-      for (int j = 0; j < C; ++j)
-      {
-        float y = targets_onehot.data[i * C + j];
-        float p = preds.data[i * C + j];
-        loss += -y * std::log(p + 1e-8f);
-      }
-    }
-
-    return loss / B;
-  }
-
-  void train(int epochs, int log_every)
+  void train(int epochs, int log_every, std::string device)
   {
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
@@ -75,7 +37,12 @@ public:
 
       while (train_loader.has_next())
       {
-        auto [X, y_tensor] = train_loader.next_batch();           // y_tensor: shape [B, 1]
+        auto [X, y_tensor] = train_loader.next_batch(); // y_tensor: shape [B, 1]
+        if (device == "cuda")
+        {
+          X = X.to_device(true);
+          y_tensor = y_tensor.to_device(true);
+        }
         Tensor y_onehot = Tensor::one_hot(y_tensor, num_classes); // shape [B, C]
 
         Tensor preds = model.forward(X);  // preds: [B, C]
@@ -83,8 +50,8 @@ public:
         model.update_weights(batch_size); // SGD update
         model.zero_grad();                // reset gradients
 
-        float batch_loss = compute_loss(preds, y_onehot);
-        float batch_acc = compute_accuracy(preds, y_tensor);
+        float batch_loss = Tensor::compute_loss(preds, y_onehot);
+        float batch_acc = Tensor::compute_accuracy(preds, y_tensor, num_classes);
 
         epoch_loss += batch_loss;
         epoch_acc += batch_acc;
@@ -127,8 +94,8 @@ public:
 
       Tensor preds = model.forward(X);
 
-      val_loss += compute_loss(preds, y_onehot);
-      val_acc += compute_accuracy(preds, y_tensor);
+      val_loss += Tensor::compute_loss(preds, y_onehot);
+      val_acc += Tensor::compute_accuracy(preds, y_tensor, num_classes);
       ++batches;
     }
 

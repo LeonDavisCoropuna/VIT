@@ -68,7 +68,7 @@ public:
     // ----------------------------------------------------------
     // 1. Backprop through linear2 (token projection)
     // ----------------------------------------------------------
-    if (!delta_tokens.data.empty())
+    if (!delta_tokens.empty())
     {
       Tensor delta_tokens_flat = delta_tokens.reshape({N * L, D}); // [2048, 16]
       linear2->backward(&delta_tokens_flat);
@@ -100,7 +100,7 @@ public:
     // ----------------------------------------------------------
     // 2. Backprop through direct input path (if delta_x provided)
     // ----------------------------------------------------------
-    if (!delta_x.data.empty())
+    if (!delta_x.empty())
     {
       input_deltas = input_deltas + delta_x;
     }

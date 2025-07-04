@@ -51,6 +51,7 @@ public:
   Tensor transpose(const std::vector<int> &axes) const;
   Tensor permute(const std::vector<int> &dims) const;
   Tensor matmul(const Tensor &other) const;
+  Tensor mean(const std::vector<int> &dims, bool keepdims) const;
   static Tensor bernoulli(const std::vector<int> &shape, float p);
   Tensor relu() const;
   Tensor relu_derivative() const;
@@ -62,4 +63,8 @@ public:
   Tensor operator+(float scalar) const;
   Tensor operator*(float scalar) const;
   std::vector<float> to_host() const;
+  Tensor to_device(bool use_cuda) const;
+  static float compute_accuracy(const Tensor &preds, const Tensor &targets, int num_classes);
+  static float compute_loss(const Tensor &preds, const Tensor &targets_onehot);
+  bool empty() const;
 };

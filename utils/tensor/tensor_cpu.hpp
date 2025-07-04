@@ -498,7 +498,6 @@ public:
     return result;
   }
 
-  // Tensor::mean: media sobre una dimensión (dim), opcionalmente manteniendo esa dimensión
   Tensor mean(int dim, bool keepdim) const
   {
     assert(dim >= 0 && dim < shape.size());
@@ -1102,5 +1101,53 @@ public:
     shape = other.shape;
     data = other.data;
     return *this;
+  }
+
+  Tensor to_device(bool use_cuda) const
+  {
+
+    return *this;
+  }
+
+  static float compute_accuracy(const Tensor &preds, const Tensor &targets, int num_classes)
+  {
+    int correct = 0;
+    int total = preds.shape[0];
+
+    for (int i = 0; i < total; ++i)
+    {
+      int pred_label = std::distance(preds.data.begin() + i * num_classes,
+                                     std::max_element(preds.data.begin() + i * num_classes,
+                                                      preds.data.begin() + (i + 1) * num_classes));
+      int true_label = static_cast<int>(targets.data[i]);
+      if (pred_label == true_label)
+        ++correct;
+    }
+
+    return static_cast<float>(correct) / total;
+  }
+
+  static float compute_loss(const Tensor &preds, const Tensor &targets_onehot)
+  {
+    // Cross entropy: -sum(y_true * log(pred)) / B
+    float loss = 0.0f;
+    int B = preds.shape[0];
+    int C = preds.shape[1];
+
+    for (int i = 0; i < B; ++i)
+    {
+      for (int j = 0; j < C; ++j)
+      {
+        float y = targets_onehot.data[i * C + j];
+        float p = preds.data[i * C + j];
+        loss += -y * std::log(p + 1e-8f);
+      }
+    }
+
+    return loss / B;
+  }
+  bool empty() const
+  {
+    return data.empty();
   }
 };

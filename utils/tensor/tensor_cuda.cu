@@ -4,6 +4,7 @@
 #include <numeric>
 #include <stdexcept>
 #include "tensor_cuda.cuh"
+#include "algorithm"
 
 static std::mt19937 global_gen;
 
@@ -13,6 +14,33 @@ __global__ void fillKernel(float *data, float value, int size)
   if (idx < size)
   {
     data[idx] = value;
+  }
+}
+
+__global__ void compute_accuracy_kernel(const float *preds, const float *targets, int *correct, int num_classes, int batch_size)
+{
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i >= batch_size)
+    return;
+
+  // Encontrar argmax
+  int pred_label = 0;
+  float max_val = preds[i * num_classes];
+  for (int j = 1; j < num_classes; ++j)
+  {
+    float val = preds[i * num_classes + j];
+    if (val > max_val)
+    {
+      max_val = val;
+      pred_label = j;
+    }
+  }
+
+  int true_label = static_cast<int>(targets[i]);
+
+  if (pred_label == true_label)
+  {
+    atomicAdd(correct, 1);
   }
 }
 
@@ -604,6 +632,27 @@ Tensor Tensor::rand_uniform_gpu(const std::vector<int> &shape, float low, float 
   return t;
 }
 
+Tensor Tensor::kaiming_normal(const std::vector<int> &shape, int fan_in, bool use_negative)
+{
+  Tensor t(shape);
+  float scale = std::sqrt(2.0f / fan_in);
+  std::vector<float> host_data(t.size);
+
+  std::normal_distribution<float> dist(0.0f, scale);
+  for (float &x : host_data)
+  {
+    x = dist(global_gen);
+  }
+
+  cudaError_t err = cudaMemcpy(t.data, host_data.data(), t.size * sizeof(float), cudaMemcpyHostToDevice);
+  if (err != cudaSuccess)
+  {
+    throw std::runtime_error("cudaMemcpy failed: " + std::string(cudaGetErrorString(err)));
+  }
+
+  return t;
+}
+
 Tensor Tensor::xavier_normal(const std::vector<int> &shape, int fan_in, int fan_out)
 {
   Tensor t(shape);
@@ -639,7 +688,6 @@ Tensor Tensor::xavier_uniform(const std::vector<int> &shape, int fan_in, int fan
   }
   return t;
 }
-
 
 Tensor Tensor::one_hot(const Tensor &labels, int num_classes)
 {
@@ -1754,4 +1802,102 @@ std::vector<float> Tensor::to_host() const
     throw std::runtime_error("cudaMemcpy failed: " + std::string(cudaGetErrorString(err)));
   }
   return host_data;
+}
+
+Tensor Tensor::to_device(bool use_cuda) const
+{
+  if (use_cuda)
+  {
+    // 🟢 Crear tensor en GPU desde datos en CPU
+    std::vector<float> host_data = this->to_host(); // en caso ya esté en GPU, esto igual funciona
+    return Tensor(this->shape, host_data);          // crea tensor en GPU
+  }
+  else
+  {
+    // 🔵 Crear tensor en CPU desde datos en GPU
+    std::vector<float> host_data = this->to_host();
+
+    Tensor cpu_tensor;
+    cpu_tensor.shape = this->shape;
+    cpu_tensor.size = this->size;
+    cpu_tensor.data = new float[this->size]; // usa memoria CPU
+    std::copy(host_data.begin(), host_data.end(), cpu_tensor.data);
+
+    return cpu_tensor;
+  }
+}
+
+float Tensor::compute_accuracy(const Tensor &preds, const Tensor &targets, int num_classes)
+{
+  int batch_size = preds.shape[0];
+  int *d_correct;
+  cudaMalloc(&d_correct, sizeof(int));
+  cudaMemset(d_correct, 0, sizeof(int));
+
+  int threads = 256;
+  int blocks = (batch_size + threads - 1) / threads;
+
+  compute_accuracy_kernel<<<blocks, threads>>>(
+      preds.data, targets.data, d_correct, num_classes, batch_size);
+
+  cudaDeviceSynchronize();
+
+  int h_correct;
+  cudaMemcpy(&h_correct, d_correct, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaFree(d_correct);
+
+  return static_cast<float>(h_correct) / batch_size;
+}
+
+float Tensor::compute_loss(const Tensor &preds, const Tensor &targets_onehot)
+{
+  // Cross entropy: -sum(y_true * log(pred)) / B
+  float loss = 0.0f;
+  int B = preds.shape[0];
+  int C = preds.shape[1];
+
+  for (int i = 0; i < B; ++i)
+  {
+    for (int j = 0; j < C; ++j)
+    {
+      float y = targets_onehot.data[i * C + j];
+      float p = preds.data[i * C + j];
+      loss += -y * std::log(p + 1e-8f);
+    }
+  }
+
+  return loss / B;
+}
+
+bool Tensor::empty() const
+{
+  return data == nullptr || size == 0;
+}
+
+Tensor Tensor::mean(const std::vector<int> &dims, bool keepdims) const
+{
+  Tensor s = this->sum(dims); // Este `sum` debe funcionar en GPU si `this->data` está en device.
+
+  int reduce_size = 1;
+  for (int d : dims)
+    reduce_size *= shape[d];
+
+  s = s / static_cast<float>(reduce_size); // Esto debe funcionar con operador `/` en GPU.
+
+  if (keepdims)
+  {
+    // expand shape con 1s en las posiciones reducidas
+    std::vector<int> new_shape;
+    size_t s_idx = 0;
+    for (size_t i = 0; i < shape.size(); ++i)
+    {
+      if (std::find(dims.begin(), dims.end(), i) != dims.end())
+        new_shape.push_back(1);
+      else
+        new_shape.push_back(s.shape[s_idx++]);
+    }
+    return s.reshape(new_shape); // reshape debe funcionar también en GPU.
+  }
+
+  return s;
 }
