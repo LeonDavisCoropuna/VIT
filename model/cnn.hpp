@@ -22,26 +22,38 @@ public:
   {
     // Entrada esperada: [N, 1, 28, 28]
 
-    // Conv1: 1 -> 8 canales, kernel 3x3
-    layers.push_back(new Conv2DLayer(1, 4, 3, 3, 1, 1)); // stride 1, padding 1
+    // Entrada: 28x28x3
+    layers.push_back(new Conv2DLayer(1, 16, 3, 3, 1, 1)); // in_channels=3, out=16, kernel=3x3, pad=1, stride=1
+    layers.push_back(new BatchNorm2DLayer(16));
+    layers.push_back(new ReLULayer());
+
+    // MaxPool 2x2 -> 14x14x16
+    layers.push_back(new MaxPool2DLayer(2, 2)); // kernel=2x2, stride=2
+
+    // Conv2D: 14x14x16 -> 14x14x4
+    layers.push_back(new Conv2DLayer(16, 4, 3, 3, 1, 1)); // in=16, out=4
     layers.push_back(new BatchNorm2DLayer(4));
     layers.push_back(new ReLULayer());
 
-    // MaxPool: reduce de 28x28 -> 4x4
-    layers.push_back(new MaxPool2DLayer(7, 7));
+    // MaxPool 2x2 -> 7x7x4
+    layers.push_back(new MaxPool2DLayer(2, 2));
 
-    // Flatten: 8x4x4
+    // Flatten: 7x7x4 = 196
     layers.push_back(new FlattenLayer());
 
-    // Dense final: 4x4x4 -> 10
-    layers.push_back(new DenseLayer(4 * 4 * 4, 10));
+    // Dense(196 -> 16)
+    layers.push_back(new DenseLayer(196, 16));
+    layers.push_back(new ReLULayer());
+
+    // Dense(16 -> 10)
+    layers.push_back(new DenseLayer(16, 10));
     layers.push_back(new SoftmaxLayer());
 
     // Asignar optimizador a las capas con pesos
     for (auto *layer : layers)
     {
       if (layer->has_weights())
-        layer->set_optimizer(new SGD(0.01f)); // comparte el mismo SGD
+        layer->set_optimizer(new SGD(0.002f)); // comparte el mismo SGD
     }
   }
 

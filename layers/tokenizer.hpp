@@ -1,8 +1,5 @@
 #pragma once
-#include "layer.hpp"
-#include "../utils/tensor.hpp"
-#include "dense_layer.hpp"
-#include "softmax_layer.hpp"
+#include "all_layers.hpp"
 
 // --- FilterTokenizer ---
 class FilterTokenizer : public Layer
@@ -71,7 +68,7 @@ public:
     // ----------------------------------------------------------
     // 1. Backprop through linear2 (token projection)
     // ----------------------------------------------------------
-    if (!delta_tokens.data.empty())
+    if (!delta_tokens.empty())
     {
       Tensor delta_tokens_flat = delta_tokens.reshape({N * L, D}); // [2048, 16]
       linear2->backward(&delta_tokens_flat);
@@ -103,7 +100,7 @@ public:
     // ----------------------------------------------------------
     // 2. Backprop through direct input path (if delta_x provided)
     // ----------------------------------------------------------
-    if (!delta_x.data.empty())
+    if (!delta_x.empty())
     {
       input_deltas = input_deltas + delta_x;
     }
@@ -242,15 +239,15 @@ public:
     Tensor a = linear1->forward({t})[0]; // [N, L, D]
     Tensor b = linear2->forward({x})[0]; // [N, HW, D]
 
-    a = a.transpose(1, 2); // [N, D, L]
-    a = b.matmul(a);       // [N, HW, L]
+    a = a.transpose({0, 2, 1}); // [N, D, L]
+    a = b.matmul(a);            // [N, HW, L]
     cache1 = a;
 
     a = a.softmax(1); // [N, HW, L]
     cache2 = a;
 
-    a = a.transpose(1, 2);    // [N, L, HW]
-    Tensor out = a.matmul(b); // [N, L, D]
+    a = a.transpose({0, 2, 1}); // [N, L, HW]
+    Tensor out = a.matmul(b);   // [N, L, D]
     token_cache = out;
     return {out};
   }
@@ -259,23 +256,23 @@ public:
   {
     const Tensor &delta = next_layer->get_input_deltas(); // [N, L, D]
 
-    Tensor b = linear2->get_last_input(); // [N, HW, D]
-    Tensor attn = cache2;                 // [N, HW, L]
-    Tensor attn_T = attn.transpose(1, 2); // [N, L, HW]
+    Tensor b = linear2->get_last_input();      // [N, HW, D]
+    Tensor attn = cache2;                      // [N, HW, L]
+    Tensor attn_T = attn.transpose({0, 2, 1}); // [N, L, HW]
 
     // Paso 1: backward del último matmul: attn_T.matmul(b)
-    Tensor db_from_matmul = attn_T.transpose(1, 2).matmul(delta); // [N, HW, D]
-    Tensor d_attn_T = delta.matmul(b.transpose(2, 1));            // [N, L, HW]
-    Tensor d_attn = d_attn_T.transpose(1, 2);                     // [N, HW, L]
+    Tensor db_from_matmul = attn_T.transpose({0, 2, 1}).matmul(delta); // [N, HW, D]
+    Tensor d_attn_T = delta.matmul(b.transpose({0, 2, 1}));                 // [N, L, HW]
+    Tensor d_attn = d_attn_T.transpose({0, 2, 1});                     // [N, HW, L]
 
     // Paso 2: softmax backward
     Tensor d_softmax_input = Tensor::softmax_backward(cache1, d_attn); // [N, HW, L]
 
     // Paso 3: backward del matmul: b.matmul(a)
-    Tensor a_transposed = linear1->get_last_input().transpose(1, 2);            // [N, D, L]
-    Tensor db_from_attn = d_softmax_input.matmul(a_transposed.transpose(2, 1)); // [N, HW, D]
-    Tensor da = b.transpose(1, 2).matmul(d_softmax_input);                      // [N, D, L]
-    Tensor da_T = da.transpose(1, 2);                                           // [N, L, D]
+    Tensor a_transposed = linear1->get_last_input().transpose({0, 2, 1});       // [N, D, L]
+    Tensor db_from_attn = d_softmax_input.matmul(a_transposed.transpose({0, 2, 1})); // [N, HW, D]
+    Tensor da = b.transpose({0, 2, 1}).matmul(d_softmax_input);                 // [N, D, L]
+    Tensor da_T = da.transpose({0, 2, 1});                                      // [N, L, D]
 
     // Paso 4: backward sobre linear1 (de t)
     linear1->backward(&da_T, nullptr);

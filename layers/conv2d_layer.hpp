@@ -59,7 +59,7 @@ public:
         {
           for (int wo = 0; wo < W_out; ++wo)
           {
-            float sum = biases.at1d(co);
+            float sum = biases.at({co});
 
             for (int ci = 0; ci < C_in; ++ci)
             {
@@ -72,13 +72,13 @@ public:
 
                   if (h_in >= 0 && h_in < H_in && w_in >= 0 && w_in < W_in)
                   {
-                    sum += input.at4d(n, ci, h_in, w_in) *
-                           weights.at4d(co, ci, kh, kw);
+                    sum += input.at({n, ci, h_in, w_in}) *
+                           weights.at({co, ci, kh, kw});
                   }
                 }
               }
             }
-            output.at4d(n, co, ho, wo) = sum;
+            output.at({n, co, ho, wo}) = sum;
           }
         }
       }
@@ -116,7 +116,7 @@ public:
       for (int co = 0; co < C_out; ++co)
         for (int ho = 0; ho < H_out; ++ho)
           for (int wo = 0; wo < W_out; ++wo)
-            grad_biases.at1d(co) += delta.at4d(n, co, ho, wo);
+            grad_biases.at({co}) += delta.at({n, co, ho, wo});
 
     // grad_weights
     for (int co = 0; co < C_out; ++co)
@@ -136,11 +136,11 @@ public:
                 {
                   int h_in = ho * stride + kh;
                   int w_in = wo * stride + kw;
-                  sum += padded_input.at4d(n, ci, h_in, w_in) * delta.at4d(n, co, ho, wo);
+                  sum += padded_input.at({n, ci, h_in, w_in}) * delta.at({n, co, ho, wo});
                 }
               }
             }
-            grad_weights.at4d(co, ci, kh, kw) = sum;
+            grad_weights.at({co, ci, kh, kw}) = sum;
           }
         }
       }
@@ -168,8 +168,8 @@ public:
                   if (h_in >= 0 && h_in < padded_deltas.shape[2] &&
                       w_in >= 0 && w_in < padded_deltas.shape[3])
                   {
-                    float flipped_weight = weights.at4d(co, ci, K_h - 1 - kh, K_w - 1 - kw);
-                    padded_deltas.at4d(n, ci, h_in, w_in) += delta.at4d(n, co, ho, wo) * flipped_weight;
+                    float flipped_weight = weights.at({co, ci, K_h - 1 - kh, K_w - 1 - kw});
+                    padded_deltas.at({n, ci, h_in, w_in}) += delta.at({n, co, ho, wo}) * flipped_weight;
                   }
                 }
               }

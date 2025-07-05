@@ -1,6 +1,5 @@
 #pragma once
 #include "layer.hpp"
-#include "../utils/tensor.hpp"
 
 class DenseLayer : public Layer
 {
@@ -54,15 +53,14 @@ public:
     {
       delta = next_layer->get_input_deltas();
     }
-    Tensor input_T = input.transpose(0, 1); // (in_features, N)
-    grad_weights = input_T.matmul(delta);   // (in_features, out_features)
+    Tensor input_T = input.transpose({1, 0}); // (in_features, N)
+    grad_weights = input_T.matmul(delta);     // (in_features, out_features)
 
     if (use_bias)
       grad_bias = delta.sum(0); // sum across batch
 
-    Tensor weights_T = weights.transpose(0, 1); // (out_features, in_features)
-    input_deltas = delta.matmul(weights_T);     // (N, in_features)
-    Tensor iii = input_deltas;
+    Tensor weights_T = weights.transpose({1, 0}); // (out_features, in_features)
+    input_deltas = delta.matmul(weights_T);       // (N, in_features)
   }
 
   void update_weights(float batch_size) override

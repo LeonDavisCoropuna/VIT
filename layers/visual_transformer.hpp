@@ -1,15 +1,5 @@
 #pragma once
-#include "layer.hpp"
-#include "projector_layer.hpp"
-#include "tokenizer.hpp"
-#include "transformer_layer.hpp"
-
-#include "../layers/conv2d_layer.hpp"
-#include "../layers/batch_normalization_layer.hpp"
-#include "../layers/visual_transformer.hpp"
-#include "../layers/dense_layer.hpp"
-#include "../layers/pooling_layer.hpp"
-#include "../layers/flatten_layer.hpp"
+#include "all_layers.hpp"
 
 class VisualTransformer : public Layer
 {
@@ -49,7 +39,7 @@ public:
       throw std::runtime_error("Unknown tokenizer type: " + tokenizer_type);
     }
 
-    transformer = new TransformerLayer(token_channels, attn_dim);
+    transformer = new TransformerLayer(token_channels, attn_dim, transformer_heads);
 
     if (is_projected)
     {
@@ -144,14 +134,14 @@ public:
 
     // Paso 3: Backward del tokenizer
     // Sumamos los deltas que vienen del transformer y los que vienen del projector (si aplica)
-    if (!delta_x.data.empty())
+    if (!delta_x.empty())
     {
       // Si tenemos delta_x del projector, lo pasamos al tokenizer
       // Paso 3: Backward del tokenizer
       if (tokenizer_type == "filter")
       {
         // FilterTokenizer solo necesita delta_x (respecto a la imagen)
-        if (!delta_x.data.empty())
+        if (!delta_x.empty())
         {
           tokenizer->backward2(delta_t, delta_x);
         }

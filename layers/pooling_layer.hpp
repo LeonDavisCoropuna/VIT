@@ -1,5 +1,4 @@
 #pragma once
-#include "../utils/tensor.hpp"
 #include "layer.hpp"
 
 class MaxPool2DLayer : public Layer
@@ -47,7 +46,7 @@ public:
               {
                 int h = i * stride + ki;
                 int w = j * stride + kj;
-                float val = input.at4d(n, c, h, w);
+                float val = input.at({n, c, h, w});
                 if (val > max_val)
                 {
                   max_val = val;
@@ -56,7 +55,7 @@ public:
               }
             }
 
-            output.at4d(n, c, i, j) = max_val;
+            output.at({n, c, i, j}) = max_val;
             max_indices[((n * C + c) * H_out + i) * W_out + j] = max_idx;
           }
         }
@@ -90,7 +89,7 @@ public:
             int max_pos = max_indices[idx];
             int h = max_pos / W;
             int w = max_pos % W;
-            input_deltas.at4d(n, c, h, w) = delta.at4d(n, c, i, j);
+            input_deltas.at({n, c, h, w}) = delta.at({n, c, i, j});
           }
         }
       }
