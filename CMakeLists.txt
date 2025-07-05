@@ -29,7 +29,7 @@ if(USE_CUDA)
   set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -O3 -DNDEBUG")
   set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G -O0")
   
-  message(STATUS "✅ CUDA activado - Versión ${CUDAToolkit_VERSION}")
+  message(STATUS "CUDA activado - Versión ${CUDAToolkit_VERSION}")
   message(STATUS "Arquitecturas CUDA: ${CMAKE_CUDA_ARCHITECTURES}")
 endif()
 

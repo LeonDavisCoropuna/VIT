@@ -2,8 +2,8 @@
 
 # Verificar si se pasó el nombre del ejecutable
 if [ -z "$1" ]; then
-  echo "❌ Debes proporcionar el nombre del ejecutable como primer argumento."
-  echo "👉 Uso: ./run.sh <nombre_ejecutable> [--cuda]"
+  echo "Debes proporcionar el nombre del ejecutable como primer argumento."
+  echo "Uso: ./run.sh <nombre_ejecutable> [--cuda]"
   exit 1
 fi
 
@@ -25,8 +25,8 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      echo "❌ Argumento desconocido: $1"
-      echo "👉 Uso: ./run.sh <nombre_ejecutable> [--cuda]"
+      echo "Argumento desconocido: $1"
+      echo "Uso: ./run.sh <nombre_ejecutable> [--cuda]"
       exit 1
       ;;
   esac
@@ -36,7 +36,7 @@ done
 MODE=${MODE:-$DEFAULT_MODE}
 USE_CUDA=${USE_CUDA:-OFF}
 
-echo "⚙️  Configurando construcción (Modo: ${MODE})"
+echo "Configurando construcción (Modo: ${MODE})"
 
 # Crear directorios necesarios
 mkdir -p "${BUILD_DIR}"
@@ -50,12 +50,12 @@ cmake .. -DUSE_CUDA=${USE_CUDA} -DCMAKE_BUILD_TYPE=Release
 
 echo "🛠️  Compilando proyecto..."
 if ! make -j$(nproc); then
-  echo "❌ Error en la compilación"
+  echo "Error en la compilación"
   exit 1
 fi
 
-echo "🚀 Ejecutando programa..."
+echo "Ejecutando programa..."
 cd "${PROJECT_ROOT}" || exit 1
 time "${BUILD_DIR}/${EXECUTABLE}"
 
-echo "✅ Ejecución completada (Modo: ${MODE})"
+echo "Ejecución completada (Modo: ${MODE})"
