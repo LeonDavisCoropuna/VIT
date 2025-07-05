@@ -26,14 +26,14 @@ int main()
   int batch_size = 128;
   int num_classes = 10;
   int max_samples = 5000;
-  std::string path = "/home/leon/Documentos/UNSA/TOPICOS IA/MLP-Multi-Layer-Perceptron/mnist_data/";
+  std::string path = "/home/leon/Documentos/UNSA/TOPICOS IA/VIT/fashion_data/";
   std::string device = "cpu";
-  Dataset dataset_train = load_dataset(path + "train-images.idx3-ubyte",
-                                       path + "train-labels.idx1-ubyte",
+  Dataset dataset_train = load_dataset(path + "train-images-idx3-ubyte",
+                                       path + "train-labels-idx1-ubyte",
                                        max_samples);
 
-  Dataset dataset_val = load_dataset(path + "t10k-images.idx3-ubyte",
-                                     path + "t10k-labels.idx1-ubyte",
+  Dataset dataset_val = load_dataset(path + "t10k-images-idx3-ubyte",
+                                     path + "t10k-labels-idx1-ubyte",
                                      1000);
 
   DataLoader train_loader(dataset_train.images, dataset_train.labels, batch_size);
