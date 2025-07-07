@@ -20,40 +20,34 @@ private:
 public:
   CNN()
   {
-    // Entrada esperada: [N, 1, 28, 28]
+    // Entrada esperada: [N, 3, 28, 28]
 
-    // Entrada: 28x28x3
-    layers.push_back(new Conv2DLayer(1, 16, 3, 3, 1, 1)); // in_channels=3, out=16, kernel=3x3, pad=1, stride=1
-    layers.push_back(new BatchNorm2DLayer(16));
+    // Primera capa convolucional: Conv2D(3, 16, 3x3, padding=1, stride=1)
+    layers.push_back(new Conv2DLayer(1, 16, 3, 3, 1, 1));
     layers.push_back(new ReLULayer());
+    layers.push_back(new MaxPool2DLayer(2, 2)); // [N, 16, 14, 14]
 
-    // MaxPool 2x2 -> 14x14x16
-    layers.push_back(new MaxPool2DLayer(2, 2)); // kernel=2x2, stride=2
-
-    // Conv2D: 14x14x16 -> 14x14x4
-    layers.push_back(new Conv2DLayer(16, 4, 3, 3, 1, 1)); // in=16, out=4
-    layers.push_back(new BatchNorm2DLayer(4));
+    // Segunda capa convolucional: Conv2D(16, 4, 3x3, padding=1, stride=1)
+    layers.push_back(new Conv2DLayer(16, 4, 3, 3, 1, 1));
     layers.push_back(new ReLULayer());
+    layers.push_back(new MaxPool2DLayer(2, 2)); // [N, 4, 7, 7]
 
-    // MaxPool 2x2 -> 7x7x4
-    layers.push_back(new MaxPool2DLayer(2, 2));
-
-    // Flatten: 7x7x4 = 196
+    // Flatten: 4*7*7 = 196
     layers.push_back(new FlattenLayer());
 
-    // Dense(196 -> 16)
+    // Capa totalmente conectada: 196 -> 16
     layers.push_back(new DenseLayer(196, 16));
     layers.push_back(new ReLULayer());
 
-    // Dense(16 -> 10)
+    // Capa de salida: 16 -> 10 (clases)
     layers.push_back(new DenseLayer(16, 10));
     layers.push_back(new SoftmaxLayer());
 
-    // Asignar optimizador a las capas con pesos
+    // Asignar optimizador SGD con lr=0.002 a las capas con pesos
     for (auto *layer : layers)
     {
       if (layer->has_weights())
-        layer->set_optimizer(new SGD(0.002f)); // comparte el mismo SGD
+        layer->set_optimizer(new SGD(0.01f));
     }
   }
 

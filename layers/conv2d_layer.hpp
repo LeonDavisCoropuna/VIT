@@ -107,10 +107,6 @@ public:
     if (padding > 0)
       padded_input = input.pad({0, 0, 0, 0, padding, padding, padding, padding});
 
-    grad_weights = Tensor::zeros(weights.shape);
-    grad_biases = Tensor::zeros({C_out});
-    input_deltas = Tensor::zeros(input.shape);
-
     // grad_bias
     for (int n = 0; n < N; ++n)
       for (int co = 0; co < C_out; ++co)

@@ -1,6 +1,5 @@
 #pragma once
 #include "layer.hpp"
-#include <random>
 
 class DropoutLayer : public Layer
 {

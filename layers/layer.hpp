@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <random>
 #include "../utils/tensor.hpp"
 #include "../utils/optimizer.hpp"
 
