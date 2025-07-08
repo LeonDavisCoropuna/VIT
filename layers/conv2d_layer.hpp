@@ -4,81 +4,77 @@
 class Conv2DLayer : public Layer
 {
 private:
-  int in_channels, out_channels;
-  int kernel_h, kernel_w;
+  int inChannels, outChannels;
+  int kernelHeight, kernelWidth;
   int stride, padding;
 
-  Tensor weights; // [out_channels, in_channels, kernel_h, kernel_w]
-  Tensor biases;  // [out_channels]
-  Tensor grad_weights;
-  Tensor grad_biases;
+  Tensor weights;       // [outChannels, inChannels, kernelHeight, kernelWidth]
+  Tensor biases;        // [outChannels]
+  Tensor gradWeights;
+  Tensor gradBiases;
   Tensor input;
-  Tensor input_deltas;
+  Tensor inputDeltas;
   Tensor output;
 
 public:
-  Conv2DLayer(int in_channels, int out_channels, int kernel_h, int kernel_w,
+  Conv2DLayer(int inChannels, int outChannels, int kernelHeight, int kernelWidth,
               int stride = 1, int padding = 0)
-      : in_channels(in_channels), out_channels(out_channels),
-        kernel_h(kernel_h), kernel_w(kernel_w),
+      : inChannels(inChannels), outChannels(outChannels),
+        kernelHeight(kernelHeight), kernelWidth(kernelWidth),
         stride(stride), padding(padding)
   {
-
-    int fan_in = in_channels * kernel_h * kernel_w;
-    // Para convoluciones con ReLU, usar Kaiming normal
-    weights = Tensor::kaiming_normal({out_channels, in_channels, kernel_h, kernel_w}, fan_in);
-    biases = Tensor::zeros({out_channels});
-    grad_weights = Tensor::zeros(weights.shape);
-    grad_biases = Tensor::zeros(biases.shape);
+    int fanIn = inChannels * kernelHeight * kernelWidth;
+    weights = Tensor::kaiming_normal({outChannels, inChannels, kernelHeight, kernelWidth}, fanIn);
+    biases = Tensor::zeros({outChannels});
+    gradWeights = Tensor::zeros(weights.shape);
+    gradBiases = Tensor::zeros(biases.shape);
   }
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
     input = inputs[0]; // [N, C_in, H_in, W_in]
-    const int N = input.shape[0];
-    const int C_in = input.shape[1];
-    const int H_in = input.shape[2];
-    const int W_in = input.shape[3];
+    const int batchSize = input.shape[0];
+    const int inputChannels = input.shape[1];
+    const int inputHeight = input.shape[2];
+    const int inputWidth = input.shape[3];
 
-    const int C_out = weights.shape[0];
-    const int K_h = weights.shape[2];
-    const int K_w = weights.shape[3];
+    const int outputChannels = weights.shape[0];
+    const int kernelH = weights.shape[2];
+    const int kernelW = weights.shape[3];
 
-    const int H_out = (H_in + 2 * padding - K_h) / stride + 1;
-    const int W_out = (W_in + 2 * padding - K_w) / stride + 1;
+    const int outputHeight = (inputHeight + 2 * padding - kernelH) / stride + 1;
+    const int outputWidth = (inputWidth + 2 * padding - kernelW) / stride + 1;
 
-    output = Tensor({N, C_out, H_out, W_out});
+    output = Tensor({batchSize, outputChannels, outputHeight, outputWidth});
     output.fill(0.0f);
 
-    // Elimina el padding manual y maneja los bordes directamente
-    for (int n = 0; n < N; ++n)
+    for (int n = 0; n < batchSize; ++n)
     {
-      for (int co = 0; co < C_out; ++co)
+      for (int oc = 0; oc < outputChannels; ++oc)
       {
-        for (int ho = 0; ho < H_out; ++ho)
+        for (int oh = 0; oh < outputHeight; ++oh)
         {
-          for (int wo = 0; wo < W_out; ++wo)
+          for (int ow = 0; ow < outputWidth; ++ow)
           {
-            float sum = biases.at({co});
-
-            for (int ci = 0; ci < C_in; ++ci)
+            float sum = biases.at({oc});
+            for (int ic = 0; ic < inputChannels; ++ic)
             {
-              for (int kh = 0; kh < K_h; ++kh)
+              for (int kh = 0; kh < kernelH; ++kh)
               {
-                for (int kw = 0; kw < K_w; ++kw)
+                for (int kw = 0; kw < kernelW; ++kw)
                 {
-                  int h_in = ho * stride + kh - padding;
-                  int w_in = wo * stride + kw - padding;
+                  int ih = oh * stride + kh - padding;
+                  int iw = ow * stride + kw - padding;
 
-                  if (h_in >= 0 && h_in < H_in && w_in >= 0 && w_in < W_in)
+                  if (ih >= 0 && ih < inputHeight && iw >= 0 && iw < inputWidth)
                   {
-                    sum += input.at({n, ci, h_in, w_in}) *
-                           weights.at({co, ci, kh, kw});
+                    sum += input.at({n, ic, ih, iw}) *
+                           weights.at({oc, ic, kh, kw});
                   }
                 }
               }
             }
-            output.at({n, co, ho, wo}) = sum;
+            output.at({n, oc, oh, ow}) = sum;
           }
         }
       }
@@ -90,82 +86,81 @@ public:
   {
     const Tensor &delta = next_layer->get_input_deltas(); // [N, C_out, H_out, W_out]
 
-    const int N = input.shape[0];
-    const int C_in = input.shape[1];
-    const int H_in = input.shape[2];
-    const int W_in = input.shape[3];
+    const int batchSize = input.shape[0];
+    const int inputChannels = input.shape[1];
+    const int inputHeight = input.shape[2];
+    const int inputWidth = input.shape[3];
 
-    const int C_out = weights.shape[0];
-    const int K_h = weights.shape[2];
-    const int K_w = weights.shape[3];
+    const int outputChannels = weights.shape[0];
+    const int kernelH = weights.shape[2];
+    const int kernelW = weights.shape[3];
 
-    const int H_out = delta.shape[2];
-    const int W_out = delta.shape[3];
+    const int outputHeight = delta.shape[2];
+    const int outputWidth = delta.shape[3];
 
-    // Padding input para grad_weights
-    Tensor padded_input = input;
+    Tensor paddedInput = input;
     if (padding > 0)
-      padded_input = input.pad({0, 0, 0, 0, padding, padding, padding, padding});
+      paddedInput = input.pad({0, 0, 0, 0, padding, padding, padding, padding});
 
-    // grad_bias
-    for (int n = 0; n < N; ++n)
-      for (int co = 0; co < C_out; ++co)
-        for (int ho = 0; ho < H_out; ++ho)
-          for (int wo = 0; wo < W_out; ++wo)
-            grad_biases.at({co}) += delta.at({n, co, ho, wo});
+    // gradBiases
+    for (int n = 0; n < batchSize; ++n)
+      for (int oc = 0; oc < outputChannels; ++oc)
+        for (int oh = 0; oh < outputHeight; ++oh)
+          for (int ow = 0; ow < outputWidth; ++ow)
+            gradBiases.at({oc}) += delta.at({n, oc, oh, ow});
 
-    // grad_weights
-    for (int co = 0; co < C_out; ++co)
+    // gradWeights
+    for (int oc = 0; oc < outputChannels; ++oc)
     {
-      for (int ci = 0; ci < C_in; ++ci)
+      for (int ic = 0; ic < inputChannels; ++ic)
       {
-        for (int kh = 0; kh < K_h; ++kh)
+        for (int kh = 0; kh < kernelH; ++kh)
         {
-          for (int kw = 0; kw < K_w; ++kw)
+          for (int kw = 0; kw < kernelW; ++kw)
           {
             float sum = 0.0f;
-            for (int n = 0; n < N; ++n)
+            for (int n = 0; n < batchSize; ++n)
             {
-              for (int ho = 0; ho < H_out; ++ho)
+              for (int oh = 0; oh < outputHeight; ++oh)
               {
-                for (int wo = 0; wo < W_out; ++wo)
+                for (int ow = 0; ow < outputWidth; ++ow)
                 {
-                  int h_in = ho * stride + kh;
-                  int w_in = wo * stride + kw;
-                  sum += padded_input.at({n, ci, h_in, w_in}) * delta.at({n, co, ho, wo});
+                  int ih = oh * stride + kh;
+                  int iw = ow * stride + kw;
+                  sum += paddedInput.at({n, ic, ih, iw}) * delta.at({n, oc, oh, ow});
                 }
               }
             }
-            grad_weights.at({co, ci, kh, kw}) = sum;
+            gradWeights.at({oc, ic, kh, kw}) = sum;
           }
         }
       }
     }
 
-    // input_deltas
-    Tensor padded_deltas = Tensor::zeros({N, C_in, H_in + 2 * padding, W_in + 2 * padding});
+    // inputDeltas
+    Tensor paddedDeltas = Tensor::zeros({batchSize, inputChannels, inputHeight + 2 * padding, inputWidth + 2 * padding});
 
-    for (int n = 0; n < N; ++n)
+    for (int n = 0; n < batchSize; ++n)
     {
-      for (int co = 0; co < C_out; ++co)
+      for (int oc = 0; oc < outputChannels; ++oc)
       {
-        for (int ho = 0; ho < H_out; ++ho)
+        for (int oh = 0; oh < outputHeight; ++oh)
         {
-          for (int wo = 0; wo < W_out; ++wo)
+          for (int ow = 0; ow < outputWidth; ++ow)
           {
-            for (int ci = 0; ci < C_in; ++ci)
+            for (int ic = 0; ic < inputChannels; ++ic)
             {
-              for (int kh = 0; kh < K_h; ++kh)
+              for (int kh = 0; kh < kernelH; ++kh)
               {
-                for (int kw = 0; kw < K_w; ++kw)
+                for (int kw = 0; kw < kernelW; ++kw)
                 {
-                  int h_in = ho * stride + kh;
-                  int w_in = wo * stride + kw;
-                  if (h_in >= 0 && h_in < padded_deltas.shape[2] &&
-                      w_in >= 0 && w_in < padded_deltas.shape[3])
+                  int ih = oh * stride + kh;
+                  int iw = ow * stride + kw;
+                  if (ih >= 0 && ih < paddedDeltas.shape[2] &&
+                      iw >= 0 && iw < paddedDeltas.shape[3])
                   {
-                    float flipped_weight = weights.at({co, ci, K_h - 1 - kh, K_w - 1 - kw});
-                    padded_deltas.at({n, ci, h_in, w_in}) += delta.at({n, co, ho, wo}) * flipped_weight;
+                    float flippedWeight = weights.at({oc, ic, kernelH - 1 - kh, kernelW - 1 - kw});
+                    paddedDeltas.at({n, ic, ih, iw}) += delta.at({n, oc, oh, ow}) * flippedWeight;
                   }
                 }
               }
@@ -175,32 +170,32 @@ public:
       }
     }
 
-    // Quitar padding si es necesario
     if (padding > 0)
     {
-      input_deltas = padded_deltas.slice(2, padding, padding + H_in).slice(3, padding, padding + W_in);
+      inputDeltas = paddedDeltas.slice(2, padding, padding + inputHeight)
+                               .slice(3, padding, padding + inputWidth);
     }
     else
     {
-      input_deltas = padded_deltas;
+      inputDeltas = paddedDeltas;
     }
   }
 
-  void update_weights(float batch_size) override
+  void update_weights(float batchSize) override
   {
     if (optimizer)
     {
-      grad_weights = grad_weights / batch_size;
-      grad_biases = grad_biases / batch_size;
-      optimizer->update(weights, grad_weights,
-                        biases, grad_biases);
+      gradWeights = gradWeights / batchSize;
+      gradBiases = gradBiases / batchSize;
+      optimizer->update(weights, gradWeights,
+                        biases, gradBiases);
     }
   }
 
   void zero_grad() override
   {
-    grad_weights.fill(0.0f);
-    grad_biases.fill(0.0f);
+    gradWeights.fill(0.0f);
+    gradBiases.fill(0.0f);
   }
 
   void set_training(bool training) override
@@ -210,7 +205,7 @@ public:
 
   const Tensor &get_input_deltas() const override
   {
-    return input_deltas;
+    return inputDeltas;
   }
 
   bool has_weights() const override

@@ -11,7 +11,7 @@ int main()
   MLP vt_cnn;
   int batch_size = 128;
   int num_classes = 10;
-  std::string path = "/home/leon/Documentos/UNSA/TOPICOS IA/VIT/fashion_data/";
+  std::string path = "fashion_data/";
   std::string device = "cpu";
   Dataset dataset_train = load_dataset(path + "train-images-idx3-ubyte",
                                        path + "train-labels-idx1-ubyte");

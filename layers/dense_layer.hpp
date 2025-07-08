@@ -5,46 +5,46 @@ class DenseLayer : public Layer
 {
 private:
   Tensor weights;
-  Tensor bias;
+  Tensor biases;
   Tensor input;
   Tensor output;
-  Tensor grad_weights;
-  Tensor grad_bias;
-  Tensor input_deltas;
-  Tensor output_deltas;
-  bool use_bias;
-  bool training;
+  Tensor gradWeights;
+  Tensor gradBiases;
+  Tensor inputDeltas;
+  Tensor outputDeltas;
+  bool useBias;
+  bool isTraining;
 
 public:
-  DenseLayer(int in_features, int out_features, bool use_bias = true)
-      : use_bias(use_bias), training(true)
+  DenseLayer(int inFeatures, int outFeatures, bool useBias = true)
+      : useBias(useBias), isTraining(true)
   {
     // Xavier initialization
-    float limit = std::sqrt(6.0f / (in_features + out_features));
-    weights = Tensor::rand_uniform({in_features, out_features}, -limit, limit);
-    grad_weights = Tensor::zeros({in_features, out_features});
+    float limit = std::sqrt(6.0f / (inFeatures + outFeatures));
+    weights = Tensor::rand_uniform({inFeatures, outFeatures}, -limit, limit);
+    gradWeights = Tensor::zeros({inFeatures, outFeatures});
 
-    if (use_bias)
+    if (useBias)
     {
-      bias = Tensor::zeros({out_features});
-      grad_bias = Tensor::zeros({out_features});
+      biases = Tensor::zeros({outFeatures});
+      gradBiases = Tensor::zeros({outFeatures});
     }
   }
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
-    input = inputs[0];              // (N, in_features)
-    output = input.matmul(weights); // (N, out_features)
-    if (use_bias)
-      output = output + bias.reshape({1, -1}); // broadcasting
+    input = inputs[0];               // (N, inFeatures)
+    output = input.matmul(weights);  // (N, outFeatures)
+    if (useBias)
+      output = output + biases.reshape({1, -1}); // broadcasting
 
-    return {output_deltas = output};
+    return {outputDeltas = output};
   }
 
   void backward(const Tensor *targets = nullptr,
                 const Layer *next_layer = nullptr) override
   {
-    Tensor delta; // (N, out_features)
+    Tensor delta;
     if (targets)
     {
       delta = *targets;
@@ -53,37 +53,38 @@ public:
     {
       delta = next_layer->get_input_deltas();
     }
-    Tensor input_T = input.transpose({1, 0}); // (in_features, N)
-    grad_weights = input_T.matmul(delta);     // (in_features, out_features)
 
-    if (use_bias)
-      grad_bias = delta.sum(0); // sum across batch
+    Tensor inputTransposed = input.transpose({1, 0});     // (inFeatures, N)
+    gradWeights = inputTransposed.matmul(delta);          // (inFeatures, outFeatures)
 
-    Tensor weights_T = weights.transpose({1, 0}); // (out_features, in_features)
-    input_deltas = delta.matmul(weights_T);       // (N, in_features)
+    if (useBias)
+      gradBiases = delta.sum(0); // sum across batch
+
+    Tensor weightsTransposed = weights.transpose({1, 0}); // (outFeatures, inFeatures)
+    inputDeltas = delta.matmul(weightsTransposed);        // (N, inFeatures)
   }
 
-  void update_weights(float batch_size) override
+  void update_weights(float batchSize) override
   {
     if (optimizer)
     {
-      grad_weights = grad_weights / batch_size;
-      grad_bias = grad_bias / batch_size;
-      optimizer->update(weights, grad_weights,
-                        bias, grad_bias);
+      gradWeights = gradWeights / batchSize;
+      gradBiases = gradBiases / batchSize;
+      optimizer->update(weights, gradWeights,
+                        biases, gradBiases);
     }
   }
 
   void zero_grad() override
   {
-    grad_weights.fill(0.0f);
-    if (use_bias)
-      grad_bias.fill(0.0f);
+    gradWeights.fill(0.0f);
+    if (useBias)
+      gradBiases.fill(0.0f);
   }
 
-  void set_training(bool is_training) override
+  void set_training(bool training) override
   {
-    training = is_training;
+    isTraining = training;
   }
 
   const Tensor &get_output() const
@@ -93,8 +94,9 @@ public:
 
   const Tensor &get_input_deltas() const override
   {
-    return input_deltas;
+    return inputDeltas;
   }
+
   const Tensor &get_last_input() const
   {
     return input;
