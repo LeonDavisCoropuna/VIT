@@ -191,6 +191,6 @@ public:
       projector->zero_grad();
     }
   }
-  void set_training(bool is_training_) override { is_training = is_training_; }
+  void set_training(bool is_training_) override { isTraining = is_training_; }
   const Tensor &get_input_deltas() const override { return input_deltas; }
 };
