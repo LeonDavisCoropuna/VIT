@@ -170,9 +170,3 @@ Image (28x28x1)
 
 ---
 
-## ✍️ Autor
-
-Desarrollado por \[Tu Nombre]
-Implementación en C++ usando clases propias de `Tensor`, `Layer` y `Trainer`.
-
----
