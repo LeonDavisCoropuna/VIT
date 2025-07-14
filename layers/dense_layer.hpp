@@ -67,9 +67,6 @@ public:
   {
     if (optimizer)
     {
-      // std::cout << "[DEBUG] grad_weights.shape.size(): " << grad_weights.shape.size() << "  shape: " << grad_weights.printsummary() << "\n";
-      // std::cout << "[DEBUG] grad_bias.shape.size(): " << grad_bias.shape.size() << " shape: " << grad_bias.printsummary() << "\n";
-
       grad_weights = grad_weights / batch_size;
       grad_bias = grad_bias / batch_size;
       optimizer->update(weights, grad_weights,

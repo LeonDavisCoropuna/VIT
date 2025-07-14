@@ -47,11 +47,13 @@ public:
         Tensor y_onehot = Tensor::one_hot(y_tensor, num_classes); // shape [B, C]
 
         Tensor preds = model.forward(X); // preds: [B, C]
-        // print_tensor(preds, "preds");
-        // print_tensor(y_onehot, "y_onehot");
+
         model.backward(y_onehot);         // backprop
         model.update_weights(batch_size); // SGD update
         model.zero_grad();                // reset gradients
+
+        print_tensor(preds, "preds");
+        print_tensor(y_onehot, "y_onehot");
 
         float batch_loss = Tensor::compute_loss(preds, y_onehot);
         float batch_acc = Tensor::compute_accuracy(preds, y_tensor, num_classes);
@@ -128,6 +130,7 @@ public:
 
     model.set_training(false);
     int total_batches = val_loader.total_batches();
+
     while (val_loader.has_next())
     {
       // std::cout << "🔍 [EVAL] Cargando batch " << (batches + 1) << "/" << total_batches << "...\n";

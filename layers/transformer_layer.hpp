@@ -42,61 +42,16 @@ public:
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
-    Tensor x = inputs[0];                         // [L, N, C] = [16, 128, 32]
-    // x tiene la forma (L, N, C) = (tokens, batch_size, token_channels)
-
-
-    // x beforeward: [L, N, C] = [16, 128, 32]
+    Tensor x = inputs[0];                         // [L, N, C] = [16, 128, 16]
     Tensor attn_out = attention->forward({x})[0]; // [L, N, C]
-    // atten_out after forward: [L, N, C] = [16, 128, 32]
-    // attn_out tiene la forma (L, N, C) = (tokens, batch_size, attn_dim)
-
-
-
-    // -------------------------------
-    // 🔁 Residual Connection
-    // x before residual: [L, N, C] = [16, 128, 32]
-    // attn_out before residual: [L, N, C] = [16, 128, 32]
     Tensor residual = x + attn_out;               // [L, N, C]
-    // residual after residual: [L, N, C] = [16, 128, 32]
-
-
-
-
 
     // -------------------------------
     // 🔁 Normalización 1: BatchNorm1D
     // -------------------------------
-    
-    // Reshape residual to [L*N, C] for BatchNorm1D
-    // residual before reshape: [L, N, C] = [16, 128, 32]
-    // residual.shape[0] = L = 16
-    // residual.shape[1] = N = 128
-    // residual.shape[2] = C = 32
-    // norm_input before reshape: [L*N, C] = [2048, 32]
-
     Tensor norm_input = residual.reshape({residual.shape[0] * residual.shape[1], residual.shape[2]}); // [L*N, C] = [2048, 16]
-    // norm_input after reshape: [L*N, C] = [2048, 32]
-    // norm_input tiene la forma (L*N, C) = (2048, 32)
-
-
-    // Forward BatchNorm1D
-    // norm_input before forward: [L*N, C] = [2048, 32]
     Tensor norm_output = norm1->forward({norm_input})[0];                                             // [2048, C]
-    // norm_output after forward: [L*N, C] = [2048, 32]
-
-    // norm_output tiene la forma (L*N, C) = (2048, 32)
-    // x.shape[0] = L = 16
-    // x.shape[1] = N = 128
-    // x.shape[2] = C = 32
-    // Reshape norm_output back to [L, N, C]
     Tensor a = norm_output.reshape({x.shape[0], x.shape[1], x.shape[2]});                             // [L, N, C]
-    // a after reshape: [L, N, C] = [16, 128, 32]
-
-
-
-
-
 
     // -------------------------------
     // 🔁 Feedforward MLP
@@ -105,51 +60,19 @@ public:
     int N = a.shape[1];
     int C = a.shape[2];
 
-    // a before reshape: [L, N, C] = [16, 128, 32]
     Tensor a_flat = a.reshape({L * N, C});                // [2048, C]
-    // a_flat after reshape: [L*N, C] = [2048, 32]
-
-    
     Tensor b_flat = linear1->forward({a_flat})[0].relu(); // [2048, D]
-    // b_flat tiene la forma (L*N, D) = (2048, 32)
-
-
-
     Tensor b_out = linear2->forward({b_flat})[0];         // [2048, C] ← igual que `a_flat` (residual)
-    // b_out tiene la forma (L*N, C) = (2048, 32)
 
-
-    // Reshape b_out back to [L, N, C]
     Tensor b = b_out.reshape({L, N, C}); // [L, N, C]
-    // b after reshape: [L, N, C] = [16, 128, 32]
-
-
-
 
     // -------------------------------
     // 🔁 Normalización 2: BatchNorm1D
     // -------------------------------
-    // b tiene la forma (L, N, C) = (16, 128, 32)
-    // a tiene la forma (L, N, C) = (16, 128, 32)
-
     Tensor b_residual = a + b;                                // [L, N, C]
-    // b_residual tiene la forma (L, N, C) = (16, 128, 32)
-
-    // Reshape b_residual to [L*N, C] for BatchNorm1D
     Tensor b_norm_input = b_residual.reshape({L * N, C});     // [2048, C]
-    // b_norm_input after reshape: [L*N, C] = [2048, 32]
-
-
-
-    // Forward BatchNorm1D
-    // norm2 recibe el input reshaped [L*N, C] = [2048, 32]
     Tensor b_norm_output = norm2->forward({b_norm_input})[0]; // [2048, C]
-    // b_norm_output after forward: [L*N, C] = [2048, 32]
-
-
-
     last_output = b_norm_output.reshape({L, N, C});           // [L, N, C]
-    // last_output after reshape: [L, N, C] = [16, 128, 32]
 
     return {last_output};
   }

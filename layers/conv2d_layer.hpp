@@ -1,6 +1,6 @@
 #pragma once
 #include "layer.hpp"
-
+#include <omp.h> // ✅ Asegúrate de incluir esto si no está ya
 class Conv2DLayer : public Layer
 {
 private:
@@ -47,10 +47,13 @@ public:
     const int H_out = (H_in + 2 * padding - K_h) / stride + 1;
     const int W_out = (W_in + 2 * padding - K_w) / stride + 1;
 
-    output = Tensor({N, C_out, H_out, W_out});
-    output.fill(0.0f);
+    if (input.is_cuda)
+    {
+      output = conv2d_cuda_forward(input, weights, biases, stride, padding);
 
-    // Elimina el padding manual y maneja los bordes directamente
+      return {output};
+    }
+    // Convolución CPU
     for (int n = 0; n < N; ++n)
     {
       for (int co = 0; co < C_out; ++co)
@@ -103,73 +106,91 @@ public:
     const int W_out = delta.shape[3];
 
     // Padding input para grad_weights
-    Tensor padded_input = input;
-    if (padding > 0)
-      padded_input = input.pad({0, 0, 0, 0, padding, padding, padding, padding});
+    // Tensor padded_input = input;
+    // if (padding > 0)
+    //  padded_input = input.pad({0, 0, 0, 0, padding, padding, padding, padding});
 
-    grad_weights = Tensor::zeros(weights.shape);
-    grad_biases = Tensor::zeros({C_out});
-    input_deltas = Tensor::zeros(input.shape);
+    grad_weights = Tensor::zeros({C_out, C_in, K_h, K_w}, delta.is_cuda);
+    grad_biases = Tensor::zeros({C_out}, delta.is_cuda);
+    input_deltas = Tensor::zeros({N, C_in, H_in, W_in}, delta.is_cuda);
 
-    // grad_bias
-    for (int n = 0; n < N; ++n)
-      for (int co = 0; co < C_out; ++co)
-        for (int ho = 0; ho < H_out; ++ho)
-          for (int wo = 0; wo < W_out; ++wo)
-            grad_biases.at({co}) += delta.at({n, co, ho, wo});
-
-    // grad_weights
-    for (int co = 0; co < C_out; ++co)
+    if (delta.is_cuda)
     {
-      for (int ci = 0; ci < C_in; ++ci)
+      
+      conv2d_cuda_backward(delta, input, weights, grad_weights, grad_biases, input_deltas, stride, padding);
+      
+    }
+    else
+    {
+      std::cout << "[CPU] 🧠 Ejecutando backward en CPU\n";
+
+      Tensor padded_input = input;
+      if (padding > 0)
       {
-        for (int kh = 0; kh < K_h; ++kh)
+        std::cout << "[PAD] Aplicando padding: " << padding << "\n";
+        padded_input = input.pad({0, 0, 0, 0, padding, padding, padding, padding});
+      }
+
+      // grad_bias
+      for (int n = 0; n < N; ++n)
+        for (int co = 0; co < C_out; ++co)
+          for (int ho = 0; ho < H_out; ++ho)
+            for (int wo = 0; wo < W_out; ++wo)
+              grad_biases.at({co}) += delta.at({n, co, ho, wo});
+
+      // grad_weights
+      for (int co = 0; co < C_out; ++co)
+      {
+        for (int ci = 0; ci < C_in; ++ci)
         {
-          for (int kw = 0; kw < K_w; ++kw)
+          for (int kh = 0; kh < K_h; ++kh)
           {
-            float sum = 0.0f;
-            for (int n = 0; n < N; ++n)
+            for (int kw = 0; kw < K_w; ++kw)
             {
-              for (int ho = 0; ho < H_out; ++ho)
+              float sum = 0.0f;
+              for (int n = 0; n < N; ++n)
               {
-                for (int wo = 0; wo < W_out; ++wo)
+                for (int ho = 0; ho < H_out; ++ho)
                 {
-                  int h_in = ho * stride + kh;
-                  int w_in = wo * stride + kw;
-                  sum += padded_input.at({n, ci, h_in, w_in}) * delta.at({n, co, ho, wo});
+                  for (int wo = 0; wo < W_out; ++wo)
+                  {
+                    int h_in = ho * stride + kh;
+                    int w_in = wo * stride + kw;
+                    sum += padded_input.at({n, ci, h_in, w_in}) * delta.at({n, co, ho, wo});
+                  }
                 }
               }
+              grad_weights.at({co, ci, kh, kw}) = sum;
             }
-            grad_weights.at({co, ci, kh, kw}) = sum;
           }
         }
       }
-    }
 
-    // input_deltas
-    Tensor padded_deltas = Tensor::zeros({N, C_in, H_in + 2 * padding, W_in + 2 * padding});
+      // input_deltas
+      Tensor padded_deltas = Tensor::zeros({N, C_in, H_in + 2 * padding, W_in + 2 * padding});
 
-    for (int n = 0; n < N; ++n)
-    {
-      for (int co = 0; co < C_out; ++co)
+      for (int n = 0; n < N; ++n)
       {
-        for (int ho = 0; ho < H_out; ++ho)
+        for (int co = 0; co < C_out; ++co)
         {
-          for (int wo = 0; wo < W_out; ++wo)
+          for (int ho = 0; ho < H_out; ++ho)
           {
-            for (int ci = 0; ci < C_in; ++ci)
+            for (int wo = 0; wo < W_out; ++wo)
             {
-              for (int kh = 0; kh < K_h; ++kh)
+              for (int ci = 0; ci < C_in; ++ci)
               {
-                for (int kw = 0; kw < K_w; ++kw)
+                for (int kh = 0; kh < K_h; ++kh)
                 {
-                  int h_in = ho * stride + kh;
-                  int w_in = wo * stride + kw;
-                  if (h_in >= 0 && h_in < padded_deltas.shape[2] &&
-                      w_in >= 0 && w_in < padded_deltas.shape[3])
+                  for (int kw = 0; kw < K_w; ++kw)
                   {
-                    float flipped_weight = weights.at({co, ci, K_h - 1 - kh, K_w - 1 - kw});
-                    padded_deltas.at({n, ci, h_in, w_in}) += delta.at({n, co, ho, wo}) * flipped_weight;
+                    int h_in = ho * stride + kh;
+                    int w_in = wo * stride + kw;
+                    if (h_in >= 0 && h_in < padded_deltas.shape[2] &&
+                        w_in >= 0 && w_in < padded_deltas.shape[3])
+                    {
+                      float flipped_weight = weights.at({co, ci, K_h - 1 - kh, K_w - 1 - kw});
+                      padded_deltas.at({n, ci, h_in, w_in}) += delta.at({n, co, ho, wo}) * flipped_weight;
+                    }
                   }
                 }
               }
@@ -177,16 +198,16 @@ public:
           }
         }
       }
-    }
 
-    // Quitar padding si es necesario
-    if (padding > 0)
-    {
-      input_deltas = padded_deltas.slice(2, padding, padding + H_in).slice(3, padding, padding + W_in);
-    }
-    else
-    {
-      input_deltas = padded_deltas;
+      // Quitar padding si es necesario
+      if (padding > 0)
+      {
+        input_deltas = padded_deltas.slice(2, padding, padding + H_in).slice(3, padding, padding + W_in);
+      }
+      else
+      {
+        input_deltas = padded_deltas;
+      }
     }
   }
 

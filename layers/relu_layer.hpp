@@ -32,7 +32,12 @@ public:
     input_deltas = delta * tem;
 
     std::string re3 = input_deltas.printsummary("ReLU Layer Backward Input Deltas *");
+    // std::cout << re << std::endl;
+    // std::cout << re1 << std::endl;
+    // std::cout << re2 << std::endl;
+    // std::cout << re3 << std::endl;
 
+    // d
   }
 
   void update_weights(float) override {}

@@ -1,5 +1,5 @@
 #pragma once
-#include "layers/all_layers.hpp"
+#include "all_layers.hpp"
 
 class VTCNN : public Layer
 {

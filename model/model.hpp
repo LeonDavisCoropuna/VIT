@@ -14,6 +14,8 @@ public:
     for (auto *layer : layers)
       delete layer;
   }
+  size_t get_num_layers() const { return layers.size(); }
+  Layer *get_layer(size_t i) const { return layers[i]; }
 
   virtual Tensor forward(const Tensor &input)
   {

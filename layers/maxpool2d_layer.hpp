@@ -1,7 +1,9 @@
+// maxpool2d_layer.hpp
 #pragma once
 #include "layer.hpp"
 
-class MaxPool2DLayer : public Layer
+
+class MaxPool2DLayerr : public Layer
 {
 private:
   int kernel_size;
@@ -9,14 +11,15 @@ private:
   Tensor input;
   Tensor output;
   Tensor input_deltas;
-  std::vector<int> max_indices; // Para el backward
+  Tensor max_indices; // ahora es un Tensor en GPU
 
 public:
-  MaxPool2DLayer(int kernel_size, int stride)
+  MaxPool2DLayerr(int kernel_size, int stride)
       : kernel_size(kernel_size), stride(stride) {}
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
+    std::cout << "[DEBUG] MaxPool2DLayer forward\n";
     input = inputs[0]; // [N, C, H, W]
     int N = input.shape[0];
     int C = input.shape[1];
@@ -27,21 +30,14 @@ public:
     int W_out = (W - kernel_size) / stride + 1;
 
     output = Tensor({N, C, H_out, W_out}, input.is_cuda);
-    max_indices.resize(N * C * H_out * W_out);
+    max_indices = Tensor({N, C, H_out, W_out}, input.is_cuda); // nuevo: Tensor INT
 
     if (input.is_cuda)
     {
+      std::cout << "[INFO] MaxPool2DLayer running on GPU\n";
+      output = maxpool2d_cuda_forwardd(input, max_indices.data, kernel_size, stride);
 
-      // Allocate GPU memory for max_indices
-      int *d_max_indices;
-      cudaMalloc(&d_max_indices, max_indices.size() * sizeof(int));
-      output = maxpool2d_cuda_forward(input, d_max_indices, kernel_size, stride);
-
-      // Copy max_indices back to host for backpropagation
-      cudaMemcpy(max_indices.data(), d_max_indices, max_indices.size() * sizeof(int), cudaMemcpyDeviceToHost);
-      cudaFree(d_max_indices);
-
-    
+      std::cout << "[DEBUG] ✅ Output shape: [" << output.shape[0] << ", " << output.shape[1] << ", " << output.shape[2] << ", " << output.shape[3] << "] | is_cuda: " << output.is_cuda << "\n";
       return {output};
     }
 
@@ -73,7 +69,7 @@ public:
             }
 
             output.at({n, c, i, j}) = max_val;
-            max_indices[((n * C + c) * H_out + i) * W_out + j] = max_idx;
+            reinterpret_cast<int *>(max_indices.data)[((n * C + c) * H_out + i) * W_out + j] = max_idx;
           }
         }
       }
@@ -84,35 +80,26 @@ public:
 
   void backward(const Tensor *targets = nullptr, const Layer *next_layer = nullptr) override
   {
-    
+    std::cout << "[BACKWARD] MaxPool2DLayer::backward - inicio\n";
     const Tensor &delta = next_layer->get_input_deltas(); // [N, C, H_out, W_out]
-    
 
-    input_deltas = Tensor::zeros(input.shape); // Match input shape and device
-    
+    input_deltas = Tensor::zeros(input.shape, input.is_cuda);
 
-    int N = input.shape[0];
-    int C = input.shape[1];
-    int H_out = delta.shape[2];
-    int W_out = delta.shape[3];
-    int H = input.shape[2];
-    int W = input.shape[3];
-
-    if (delta.is_cuda)
+    if (input.is_cuda)
     {
-        
-        int *d_max_indices;
-        cudaMalloc(&d_max_indices, max_indices.size() * sizeof(int));
-        cudaMemcpy(d_max_indices, max_indices.data(), max_indices.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-        input_deltas = maxpool2d_cuda_backward(delta, input, d_max_indices, kernel_size, stride);
-        cudaFree(d_max_indices);
-
-        
+      std::cout << "[INFO] MaxPool2DLayer backward running on GPU\n";
+      input_deltas = maxpool2d_cuda_backward(delta, input, max_indices, kernel_size, stride);
+      std::cout << "[DEBUG] ✅ MaxPool2DLayer backward completed on GPU\n";
     }
     else
     {
       std::cout << "[INFO] MaxPool2DLayer backward running on CPU\n";
+      int N = input.shape[0];
+      int C = input.shape[1];
+      int H_out = delta.shape[2];
+      int W_out = delta.shape[3];
+      int W = input.shape[3];
+
       for (int n = 0; n < N; ++n)
       {
         for (int c = 0; c < C; ++c)
@@ -122,7 +109,7 @@ public:
             for (int j = 0; j < W_out; ++j)
             {
               int idx = ((n * C + c) * H_out + i) * W_out + j;
-              int max_pos = max_indices[idx];
+              int max_pos = reinterpret_cast<int *>(max_indices.data)[idx];
               int h = max_pos / W;
               int w = max_pos % W;
               input_deltas.at({n, c, h, w}) = delta.at({n, c, i, j});
@@ -132,7 +119,7 @@ public:
       }
     }
 
-
+    std::cout << "[BACKWARD] MaxPool2DLayer::backward - fin\n";
   }
 
   void update_weights(float batch_size) override {}
