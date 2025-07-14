@@ -1025,6 +1025,7 @@ public:
   }
   Tensor operator*(const Tensor &other) const
   {
+    // Caso 1: shape igual → multiplicación directa
     assert(shape.size() == other.shape.size());
 
     Tensor result(shape);
@@ -1150,4 +1151,42 @@ public:
   {
     return data.empty();
   }
+  std::string printsummary(std::string name = "") const
+  {
+    std::ostringstream oss;
+    if (!name.empty())
+      oss << "Tensor: " << name << "\n";
+    else
+      oss << "Tensor:\n";
+    oss << "Tensor data: " << data.size() << ", shape size: " << shape.size() << ", shape: [";
+    for (size_t i = 0; i < shape.size(); ++i)
+    {
+      oss << shape[i];
+      if (i < shape.size() - 1)
+        oss << ", ";
+    }
+    oss << "]";
+    return oss.str();
+  }
 };
+
+void print_tensor(const Tensor &t, const std::string &name = "Tensor", int max_elems = 20)
+{
+  std::cout << "[DEBUG] " << name << " | shape: (";
+  for (size_t i = 0; i < t.shape.size(); ++i)
+  {
+    std::cout << t.shape[i];
+    if (i != t.shape.size() - 1)
+      std::cout << ", ";
+  }
+
+  int total_size = t.data.size();
+  std::cout << ") | size: " << total_size << "\n";
+
+  std::cout << "[DEBUG] " << name << " values (first " << max_elems << "): ";
+  for (int i = 0; i < std::min(max_elems, total_size); ++i)
+  {
+    std::cout << t.data[i] << " ";
+  }
+  std::cout << "\n";
+}

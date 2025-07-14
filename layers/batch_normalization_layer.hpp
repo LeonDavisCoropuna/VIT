@@ -34,22 +34,25 @@ public:
 
     if (is_training)
     {
-      mean = input.mean(0, true);                // [1, C]
-      var = (input - mean).pow(2).mean(0, true); // [1, C]
-      std_inv = (var + eps).sqrt().reciprocal(); // [1, C]
-      x_norm = (input - mean) * std_inv;         // [N, C]
+      // input tiene la forma [N, C] = [2048, 32]
+      //std::cout << "BatchNorm1D: Usando estadísticas de batch" << std::endl;
+      mean = input.mean(0, true);                // [1, 32]
+      var = (input - mean).pow(2).mean(0, true); // [1, 32]
+      std_inv = (var + eps).sqrt().reciprocal(); // [1, 32]
+      x_norm = (input - mean) * std_inv;         // [2048, 32]
 
       // Actualiza estadísticas acumuladas
-      running_mean = mean.reshape({C}) * momentum + running_mean * (1 - momentum);
-      running_var = var.reshape({C}) * momentum + running_var * (1 - momentum);
+      running_mean = mean.reshape({C}) * momentum + running_mean * (1 - momentum); // 32
+      running_var = var.reshape({C}) * momentum + running_var * (1 - momentum);   // 32
     }
     else
     {
+      std::cout << "BatchNorm1D: Usando estadísticas acumuladas" << std::endl;
       std_inv = (running_var + eps).sqrt().reciprocal().reshape({1, C});
       x_norm = (input - running_mean.reshape({1, C})) * std_inv;
     }
 
-    Tensor out = x_norm * gamma.reshape({1, C}) + beta.reshape({1, C}); // [N, C]
+    Tensor out = x_norm * gamma.reshape({1, C}) + beta.reshape({1, C}); // [N, C] [2048, 32]
     return {out};
   }
 

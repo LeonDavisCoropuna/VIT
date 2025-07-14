@@ -20,7 +20,19 @@ public:
   void backward(const Tensor *targets = nullptr, const Layer *next_layer = nullptr) override
   {
     const Tensor &delta = next_layer->get_input_deltas();
-    input_deltas = delta * input.relu_derivative();
+    std::string re = delta.printsummary("ReLU Layer Backward Delta");
+
+    const Tensor &tem_raw = input.relu_derivative();
+    std::string re1 = tem_raw.printsummary("ReLU Layer Backward Derivative");
+
+    // 👉 Asegurar que `tem` tenga el mismo shape que `delta`
+    Tensor tem = tem_raw.reshape(delta.shape);
+    std::string re2 = tem.printsummary("ReLU Layer Backward Derivative Reshaped");
+
+    input_deltas = delta * tem;
+
+    std::string re3 = input_deltas.printsummary("ReLU Layer Backward Input Deltas *");
+
   }
 
   void update_weights(float) override {}

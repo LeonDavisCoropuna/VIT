@@ -65,14 +65,26 @@ public:
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
+    // inputs should contain at least one tensor (the image)
+    // inputs size: 1 or 2
+
     Tensor x = inputs[0];
     Tensor t;
+
+    // x shape (N, C, H, W) : [N, in_channels, H, W]
+    // x data length: N * C * H * W
+
 
     input_cache = x;
 
     if (tokenizer_type == "filter")
     {
+      // FilterTokenizer solo necesita la imagen de entrada
+
       t = tokenizer->forward({x})[0];
+      // t tiene la forma (N, tokens, token_channels) = [128, 16, 32]
+      // t data length: N * tokens * token_channels
+
     }
     else
     {
@@ -80,20 +92,41 @@ public:
     }
 
     // (N, L, C) -> (L, N, C)
+    // t before permute:  [128, 16, 32]
+    // t data length before permute: N * tokens * token_channels
     t = t.permute({1, 0, 2});
+    // t after permute:  [16, 128, 32]
+    // t data length after permute: tokens * N * token_channels
 
     // Transformer
+    // t before forward: [16, 128, 32] = (tokens, N, token_channels)
     t = transformer->forward({t})[0];
+    // t after forward: [16, 128, 32] = (tokens, N, attn_dim)
+    // t data length after forward: tokens * N * attn_dim
+
+
 
     // (L, N, C) -> (N, L, C)
+    // t before permute: [16, 128, 32]
     t = t.permute({1, 0, 2});
+    // t after permute: [128, 16, 32]
+    // t data length after permute: N * tokens * attn_dim
+
+
 
     token_cache = t;
     Tensor out;
+    // Si hay un projector, lo usamos para proyectar la imagen de entrada y los tokens
+
     if (is_projected && projector)
     {
       out = projector->forward({x, t})[0];
+      // out tiene la forma (N, L, C) = [128, 784, 16]
+      // out data length: N * tokens * out_channels
     }
+
+    // out shape: [128, 784, 16]
+    // t shape: [128, 16, 32]
     return {out, t};
   }
 

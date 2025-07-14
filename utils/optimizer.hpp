@@ -25,5 +25,6 @@ public:
     // w = w - lr * dw
     weights = weights - grad_weights * learning_rate;
     biases = biases - grad_biases * learning_rate;
+    // std::cout << "SGD update: weights and biases updated with learning rate " << learning_rate << std::endl;
   }
 };

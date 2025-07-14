@@ -1,0 +1,206 @@
+❯ ./run.sh main
+
+Configurando construcción (Modo: CPU)
+🔧 Ejecutando CMake...
+-- OpenMP found: -fopenmp
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/lupo/Music/VIT/build
+🛠️  Compilando proyecto...
+[ 50%] Building CXX object CMakeFiles/main.dir/main.cpp.o
+[100%] Linking CXX executable main
+[100%] Built target main
+Ejecutando programa...
+📊 Datos cargados:
+  - Train: 48000 muestras
+  - Validation: 12000 muestras
+  - Test: 10000 muestras
+Epoch 1/10
+  Batch 100/1500 | Loss: 1.6354 | Accuracy: 40.6250%
+  Batch 200/1500 | Loss: 1.2341 | Accuracy: 50.0000%
+  Batch 300/1500 | Loss: 1.1388 | Accuracy: 71.8750%
+  Batch 400/1500 | Loss: 0.6362 | Accuracy: 81.2500%
+  Batch 500/1500 | Loss: 0.9718 | Accuracy: 65.6250%
+  Batch 600/1500 | Loss: 0.8856 | Accuracy: 68.7500%
+  Batch 700/1500 | Loss: 0.6450 | Accuracy: 84.3750%
+  Batch 800/1500 | Loss: 0.8417 | Accuracy: 78.1250%
+  Batch 900/1500 | Loss: 0.6741 | Accuracy: 87.5000%
+  Batch 1000/1500 | Loss: 0.6220 | Accuracy: 78.1250%
+  Batch 1100/1500 | Loss: 0.7309 | Accuracy: 81.2500%
+  Batch 1200/1500 | Loss: 0.6772 | Accuracy: 75.0000%
+  Batch 1300/1500 | Loss: 0.5886 | Accuracy: 81.2500%
+  Batch 1400/1500 | Loss: 0.6013 | Accuracy: 84.3750%
+  Batch 1500/1500 | Loss: 0.6289 | Accuracy: 71.8750%
+Train Loss: 0.8646 | Accuracy: 71.4292% | Time: 359.7893 s
+Val Loss: 0.5842 | Accuracy: 79.8917%
+Epoch 2/10
+  Batch 100/1500 | Loss: 0.6064 | Accuracy: 81.2500%
+  Batch 200/1500 | Loss: 0.4998 | Accuracy: 84.3750%
+  Batch 300/1500 | Loss: 0.6416 | Accuracy: 78.1250%
+  Batch 400/1500 | Loss: 0.4608 | Accuracy: 84.3750%
+  Batch 500/1500 | Loss: 0.3149 | Accuracy: 90.6250%
+  Batch 600/1500 | Loss: 0.4328 | Accuracy: 84.3750%
+  Batch 700/1500 | Loss: 0.3922 | Accuracy: 84.3750%
+  Batch 800/1500 | Loss: 0.6596 | Accuracy: 71.8750%
+  Batch 900/1500 | Loss: 0.6507 | Accuracy: 75.0000%
+  Batch 1000/1500 | Loss: 0.5077 | Accuracy: 84.3750%
+  Batch 1100/1500 | Loss: 0.4465 | Accuracy: 78.1250%
+  Batch 1200/1500 | Loss: 0.4396 | Accuracy: 84.3750%
+  Batch 1300/1500 | Loss: 0.4412 | Accuracy: 90.6250%
+  Batch 1400/1500 | Loss: 0.6359 | Accuracy: 78.1250%
+  Batch 1500/1500 | Loss: 0.2949 | Accuracy: 93.7500%
+Train Loss: 0.5259 | Accuracy: 82.1104% | Time: 585.5040 s
+Val Loss: 0.4943 | Accuracy: 82.4917%
+Epoch 3/10
+  Batch 100/1500 | Loss: 0.2999 | Accuracy: 87.5000%
+  Batch 200/1500 | Loss: 0.6617 | Accuracy: 78.1250%
+  Batch 300/1500 | Loss: 0.3044 | Accuracy: 93.7500%
+  Batch 400/1500 | Loss: 0.3728 | Accuracy: 78.1250%
+  Batch 500/1500 | Loss: 0.3810 | Accuracy: 87.5000%
+  Batch 600/1500 | Loss: 0.2380 | Accuracy: 90.6250%
+  Batch 700/1500 | Loss: 0.4825 | Accuracy: 81.2500%
+  Batch 800/1500 | Loss: 0.4801 | Accuracy: 81.2500%
+  Batch 900/1500 | Loss: 0.4718 | Accuracy: 81.2500%
+  Batch 1000/1500 | Loss: 0.3386 | Accuracy: 87.5000%
+  Batch 1100/1500 | Loss: 0.5381 | Accuracy: 87.5000%
+  Batch 1200/1500 | Loss: 0.4433 | Accuracy: 78.1250%
+  Batch 1300/1500 | Loss: 0.6277 | Accuracy: 81.2500%
+  Batch 1400/1500 | Loss: 0.4363 | Accuracy: 87.5000%
+  Batch 1500/1500 | Loss: 0.2046 | Accuracy: 93.7500%
+Train Loss: 0.4582 | Accuracy: 84.2042% | Time: 604.1585 s
+Val Loss: 0.4476 | Accuracy: 84.0583%
+Epoch 4/10
+  Batch 100/1500 | Loss: 0.4030 | Accuracy: 87.5000%
+  Batch 200/1500 | Loss: 0.7521 | Accuracy: 78.1250%
+  Batch 300/1500 | Loss: 0.3996 | Accuracy: 81.2500%
+  Batch 400/1500 | Loss: 0.4875 | Accuracy: 78.1250%
+  Batch 500/1500 | Loss: 0.3698 | Accuracy: 90.6250%
+  Batch 600/1500 | Loss: 0.2994 | Accuracy: 90.6250%
+  Batch 700/1500 | Loss: 0.2918 | Accuracy: 93.7500%
+  Batch 800/1500 | Loss: 0.2640 | Accuracy: 93.7500%
+  Batch 900/1500 | Loss: 0.3188 | Accuracy: 90.6250%
+  Batch 1000/1500 | Loss: 0.2987 | Accuracy: 90.6250%
+  Batch 1100/1500 | Loss: 0.4866 | Accuracy: 81.2500%
+  Batch 1200/1500 | Loss: 0.3747 | Accuracy: 87.5000%
+  Batch 1300/1500 | Loss: 0.2212 | Accuracy: 96.8750%
+  Batch 1400/1500 | Loss: 0.2166 | Accuracy: 96.8750%
+  Batch 1500/1500 | Loss: 0.8810 | Accuracy: 62.5000%
+Train Loss: 0.4224 | Accuracy: 85.4083% | Time: 479.5847 s
+Val Loss: 0.4221 | Accuracy: 85.1167%
+Epoch 5/10
+  Batch 100/1500 | Loss: 0.4912 | Accuracy: 81.2500%
+  Batch 200/1500 | Loss: 0.4265 | Accuracy: 81.2500%
+  Batch 300/1500 | Loss: 0.2907 | Accuracy: 90.6250%
+  Batch 400/1500 | Loss: 0.4567 | Accuracy: 87.5000%
+  Batch 500/1500 | Loss: 0.5580 | Accuracy: 78.1250%
+  Batch 600/1500 | Loss: 0.3674 | Accuracy: 90.6250%
+  Batch 700/1500 | Loss: 0.3014 | Accuracy: 84.3750%
+  Batch 800/1500 | Loss: 0.3157 | Accuracy: 87.5000%
+  Batch 900/1500 | Loss: 0.2195 | Accuracy: 96.8750%
+  Batch 1000/1500 | Loss: 0.2730 | Accuracy: 90.6250%
+  Batch 1100/1500 | Loss: 0.2002 | Accuracy: 96.8750%
+  Batch 1200/1500 | Loss: 0.3823 | Accuracy: 87.5000%
+  Batch 1300/1500 | Loss: 0.4666 | Accuracy: 75.0000%
+  Batch 1400/1500 | Loss: 0.2413 | Accuracy: 90.6250%
+  Batch 1500/1500 | Loss: 0.5022 | Accuracy: 75.0000%
+Train Loss: 0.3982 | Accuracy: 86.1938% | Time: 542.3319 s
+Val Loss: 0.4059 | Accuracy: 85.9167%
+Epoch 6/10
+  Batch 100/1500 | Loss: 0.7467 | Accuracy: 75.0000%
+  Batch 200/1500 | Loss: 0.3506 | Accuracy: 93.7500%
+  Batch 300/1500 | Loss: 0.5825 | Accuracy: 78.1250%
+  Batch 400/1500 | Loss: 0.1832 | Accuracy: 96.8750%
+  Batch 500/1500 | Loss: 0.2618 | Accuracy: 90.6250%
+  Batch 600/1500 | Loss: 0.7601 | Accuracy: 87.5000%
+  Batch 700/1500 | Loss: 0.2620 | Accuracy: 93.7500%
+  Batch 800/1500 | Loss: 0.2890 | Accuracy: 93.7500%
+  Batch 900/1500 | Loss: 0.6546 | Accuracy: 68.7500%
+  Batch 1000/1500 | Loss: 0.2002 | Accuracy: 93.7500%
+  Batch 1100/1500 | Loss: 0.2817 | Accuracy: 87.5000%
+  Batch 1200/1500 | Loss: 0.4866 | Accuracy: 87.5000%
+  Batch 1300/1500 | Loss: 0.5774 | Accuracy: 75.0000%
+  Batch 1400/1500 | Loss: 0.4964 | Accuracy: 78.1250%
+  Batch 1500/1500 | Loss: 0.2432 | Accuracy: 90.6250%
+Train Loss: 0.3811 | Accuracy: 86.8021% | Time: 588.3395 s
+Val Loss: 0.3886 | Accuracy: 86.2500%
+Epoch 7/10
+  Batch 100/1500 | Loss: 0.2334 | Accuracy: 93.7500%
+  Batch 200/1500 | Loss: 0.4143 | Accuracy: 81.2500%
+  Batch 300/1500 | Loss: 0.2061 | Accuracy: 93.7500%
+  Batch 400/1500 | Loss: 0.2089 | Accuracy: 90.6250%
+  Batch 500/1500 | Loss: 0.2769 | Accuracy: 90.6250%
+  Batch 600/1500 | Loss: 0.5833 | Accuracy: 84.3750%
+  Batch 700/1500 | Loss: 0.2583 | Accuracy: 90.6250%
+  Batch 800/1500 | Loss: 0.3933 | Accuracy: 87.5000%
+  Batch 900/1500 | Loss: 0.2276 | Accuracy: 96.8750%
+  Batch 1000/1500 | Loss: 0.4025 | Accuracy: 90.6250%
+  Batch 1100/1500 | Loss: 0.4472 | Accuracy: 84.3750%
+  Batch 1200/1500 | Loss: 0.4036 | Accuracy: 90.6250%
+  Batch 1300/1500 | Loss: 0.3313 | Accuracy: 93.7500%
+  Batch 1400/1500 | Loss: 0.3075 | Accuracy: 87.5000%
+  Batch 1500/1500 | Loss: 0.1985 | Accuracy: 93.7500%
+Train Loss: 0.3676 | Accuracy: 87.2083% | Time: 530.0218 s
+Val Loss: 0.3800 | Accuracy: 86.6333%
+Epoch 8/10
+  Batch 100/1500 | Loss: 0.3814 | Accuracy: 84.3750%
+  Batch 200/1500 | Loss: 0.6523 | Accuracy: 87.5000%
+  Batch 300/1500 | Loss: 0.4413 | Accuracy: 87.5000%
+  Batch 400/1500 | Loss: 0.1913 | Accuracy: 96.8750%
+  Batch 500/1500 | Loss: 0.3201 | Accuracy: 93.7500%
+  Batch 600/1500 | Loss: 0.3251 | Accuracy: 90.6250%
+  Batch 700/1500 | Loss: 0.3785 | Accuracy: 87.5000%
+  Batch 800/1500 | Loss: 0.4515 | Accuracy: 81.2500%
+  Batch 900/1500 | Loss: 0.3236 | Accuracy: 90.6250%
+  Batch 1000/1500 | Loss: 0.4663 | Accuracy: 81.2500%
+  Batch 1100/1500 | Loss: 0.4668 | Accuracy: 84.3750%
+  Batch 1200/1500 | Loss: 0.4435 | Accuracy: 90.6250%
+  Batch 1300/1500 | Loss: 0.2010 | Accuracy: 90.6250%
+  Batch 1400/1500 | Loss: 0.5062 | Accuracy: 84.3750%
+  Batch 1500/1500 | Loss: 0.1763 | Accuracy: 93.7500%
+Train Loss: 0.3566 | Accuracy: 87.6021% | Time: 523.2237 s
+Val Loss: 0.3711 | Accuracy: 87.2000%
+Epoch 9/10
+  Batch 100/1500 | Loss: 0.7081 | Accuracy: 71.8750%
+  Batch 200/1500 | Loss: 0.2046 | Accuracy: 90.6250%
+  Batch 300/1500 | Loss: 0.2269 | Accuracy: 93.7500%
+  Batch 400/1500 | Loss: 0.1697 | Accuracy: 93.7500%
+  Batch 500/1500 | Loss: 0.2735 | Accuracy: 87.5000%
+  Batch 600/1500 | Loss: 0.4363 | Accuracy: 84.3750%
+  Batch 700/1500 | Loss: 0.4323 | Accuracy: 78.1250%
+  Batch 800/1500 | Loss: 0.4389 | Accuracy: 84.3750%
+  Batch 900/1500 | Loss: 0.2772 | Accuracy: 87.5000%
+  Batch 1000/1500 | Loss: 0.1922 | Accuracy: 90.6250%
+  Batch 1100/1500 | Loss: 0.6562 | Accuracy: 68.7500%
+  Batch 1200/1500 | Loss: 0.7416 | Accuracy: 71.8750%
+  Batch 1300/1500 | Loss: 0.3408 | Accuracy: 87.5000%
+  Batch 1400/1500 | Loss: 0.2565 | Accuracy: 90.6250%
+  Batch 1500/1500 | Loss: 0.2026 | Accuracy: 93.7500%
+Train Loss: 0.3471 | Accuracy: 88.0104% | Time: 528.5776 s
+Val Loss: 0.3738 | Accuracy: 86.9167%
+Epoch 10/10
+  Batch 100/1500 | Loss: 0.3348 | Accuracy: 87.5000%
+  Batch 200/1500 | Loss: 0.4767 | Accuracy: 78.1250%
+  Batch 300/1500 | Loss: 0.2421 | Accuracy: 90.6250%
+  Batch 400/1500 | Loss: 0.1740 | Accuracy: 93.7500%
+  Batch 500/1500 | Loss: 0.2415 | Accuracy: 90.6250%
+  Batch 600/1500 | Loss: 0.4978 | Accuracy: 87.5000%
+  Batch 700/1500 | Loss: 0.6223 | Accuracy: 78.1250%
+  Batch 800/1500 | Loss: 0.2689 | Accuracy: 90.6250%
+  Batch 900/1500 | Loss: 0.1243 | Accuracy: 100.0000%
+  Batch 1000/1500 | Loss: 0.4862 | Accuracy: 84.3750%
+  Batch 1100/1500 | Loss: 0.2767 | Accuracy: 90.6250%
+  Batch 1200/1500 | Loss: 0.3553 | Accuracy: 90.6250%
+  Batch 1300/1500 | Loss: 0.0676 | Accuracy: 100.0000%
+  Batch 1400/1500 | Loss: 0.1929 | Accuracy: 100.0000%
+  Batch 1500/1500 | Loss: 0.1959 | Accuracy: 93.7500%
+Train Loss: 0.3394 | Accuracy: 88.2146% | Time: 554.9621 s
+Val Loss: 0.3631 | Accuracy: 87.2667%
+
+=== Evaluación final sobre conjunto de test ===
+[TEST] Final Evaluation — Loss: 0.3903 | Accuracy: 86.1721%
+
+real	96m51,233s
+user	1145m26,060s
+sys	7m31,857s
+Ejecución completada (Modo: CPU)
+
