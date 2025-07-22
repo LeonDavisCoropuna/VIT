@@ -63,9 +63,9 @@ public:
         // Solo imprime si toca
         if (log_every > 0 && batches % log_every == 0)
         {
-          std::cout << "  Batch " << batches << "/" << total_batches
-                    << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
-                    << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
+          //std::cout << "  Batch " << batches << "/" << total_batches
+          //          << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
+          //          << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
         }
       }
 

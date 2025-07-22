@@ -26,4 +26,5 @@ public:
   {
     this->optimizer = opt;
   }
+  virtual std::string get_type() const { return "Layer"; }
 };

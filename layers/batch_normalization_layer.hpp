@@ -26,6 +26,22 @@ public:
     grad_beta = Tensor::zeros({features});
   }
 
+  void save(std::ostream &out) const 
+  {
+    gamma.serialize(out);
+    beta.serialize(out);
+    running_mean.serialize(out);
+    running_var.serialize(out);
+  }
+
+  void load(std::istream &in) 
+  {
+    gamma.deserialize(in);
+    beta.deserialize(in);
+    running_mean.deserialize(in);
+    running_var.deserialize(in);
+  }
+
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
     input = inputs[0]; // [N, C]
@@ -35,7 +51,7 @@ public:
     if (is_training)
     {
       // input tiene la forma [N, C] = [2048, 32]
-      //std::cout << "BatchNorm1D: Usando estadísticas de batch" << std::endl;
+      // std::cout << "BatchNorm1D: Usando estadísticas de batch" << std::endl;
       mean = input.mean(0, true);                // [1, 32]
       var = (input - mean).pow(2).mean(0, true); // [1, 32]
       std_inv = (var + eps).sqrt().reciprocal(); // [1, 32]
@@ -43,7 +59,7 @@ public:
 
       // Actualiza estadísticas acumuladas
       running_mean = mean.reshape({C}) * momentum + running_mean * (1 - momentum); // 32
-      running_var = var.reshape({C}) * momentum + running_var * (1 - momentum);   // 32
+      running_var = var.reshape({C}) * momentum + running_var * (1 - momentum);    // 32
     }
     else
     {
@@ -193,7 +209,7 @@ public:
 
     // Obtener el delta adecuado según lo disponible
     const Tensor &delta = (targets != nullptr) ? *targets : next_layer->get_input_deltas();
-    
+
     int N = input.shape[0];
     int C = input.shape[1];
     int H = input.shape[2];

@@ -53,6 +53,7 @@ public:
   {
     return input_deltas;
   }
+  std::string get_type() const override { return "Softmax"; }
 
   bool has_weights() const override { return false; }
 };

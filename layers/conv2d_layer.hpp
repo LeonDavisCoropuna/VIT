@@ -221,4 +221,50 @@ public:
   {
     return true;
   }
+
+  void save(std::ostream &out) const 
+  {
+    // Guardar shape y datos de weights
+    int w_dim = weights.shape.size();
+    int w_size = weights.data.size();
+    out.write(reinterpret_cast<const char *>(&w_dim), sizeof(int));
+    out.write(reinterpret_cast<const char *>(weights.shape.data()), w_dim * sizeof(int));
+    out.write(reinterpret_cast<const char *>(&w_size), sizeof(int));
+    out.write(reinterpret_cast<const char *>(weights.data.data()), w_size * sizeof(float));
+
+    // Guardar shape y datos de biases
+    int b_dim = biases.shape.size();
+    int b_size = biases.data.size();
+    out.write(reinterpret_cast<const char *>(&b_dim), sizeof(int));
+    out.write(reinterpret_cast<const char *>(biases.shape.data()), b_dim * sizeof(int));
+    out.write(reinterpret_cast<const char *>(&b_size), sizeof(int));
+    out.write(reinterpret_cast<const char *>(biases.data.data()), b_size * sizeof(float));
+  }
+
+  void load(std::istream &in) 
+  {
+    // Leer shape y datos de weights
+    int w_dim, w_size;
+    in.read(reinterpret_cast<char *>(&w_dim), sizeof(int));
+    std::vector<int> w_shape(w_dim);
+    in.read(reinterpret_cast<char *>(w_shape.data()), w_dim * sizeof(int));
+    in.read(reinterpret_cast<char *>(&w_size), sizeof(int));
+    std::vector<float> w_data(w_size);
+    in.read(reinterpret_cast<char *>(w_data.data()), w_size * sizeof(float));
+
+    weights.shape = w_shape;
+    weights.data = w_data;
+
+    // Leer shape y datos de biases
+    int b_dim, b_size;
+    in.read(reinterpret_cast<char *>(&b_dim), sizeof(int));
+    std::vector<int> b_shape(b_dim);
+    in.read(reinterpret_cast<char *>(b_shape.data()), b_dim * sizeof(int));
+    in.read(reinterpret_cast<char *>(&b_size), sizeof(int));
+    std::vector<float> b_data(b_size);
+    in.read(reinterpret_cast<char *>(b_data.data()), b_size * sizeof(float));
+
+    biases.shape = b_shape;
+    biases.data = b_data;
+  }
 };

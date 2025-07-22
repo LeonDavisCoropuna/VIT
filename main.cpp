@@ -26,16 +26,16 @@ int main()
   int batch_size = 32;
   int num_classes = 10;
   int max_samples = 60000;
-  std::string path = "fashion_data/";
+  std::string path = "mnist_data/";
   std::string device = "cpu";
   // 📦 Cargar todo el dataset de entrenamiento
-  Dataset full_train = load_dataset(path + "train-images-idx3-ubyte",
-                                    path + "train-labels-idx1-ubyte",
+  Dataset full_train = load_dataset(path + "train-images.idx3-ubyte",
+                                    path + "train-labels.idx1-ubyte",
                                     max_samples);
 
   // 📦 Cargar el dataset de test (t10k)
-  Dataset dataset_test = load_dataset(path + "t10k-images-idx3-ubyte",
-                                      path + "t10k-labels-idx1-ubyte",
+  Dataset dataset_test = load_dataset(path + "t10k-images.idx3-ubyte",
+                                      path + "t10k-labels.idx1-ubyte",
                                       10000);
 
   // 📤 Dividir el dataset de entrenamiento en 80% train, 20% val
@@ -62,8 +62,22 @@ int main()
   DataLoader test_loader(dataset_test.images, dataset_test.labels, batch_size);
 
   // Trainer trainer(vt_cnn, train_loader, val_loader, num_classes, batch_size);
-  Trainer trainer(vt_cnn, train_loader, val_loader, num_classes, batch_size, &test_loader);
+  Trainer trainer(mlp, train_loader, val_loader, num_classes, batch_size, &test_loader);
 
-  trainer.train(/*epochs=*/20, /*log_every=*/100, device);
+  trainer.train(/*epochs=*/10, /*log_every=*/100, device);
+
+  //mlp.save("mlp_model.bin");
+
+  // Recargar en nuevo modelo
+  /*MLP mlp_loaded;
+  mlp_loaded.load("mlp_model.bin");
+
+  // Crear nuevo trainer con el modelo cargado
+  Trainer test_trainer(mlp_loaded, train_loader, val_loader, num_classes, batch_size, &test_loader);
+
+  std::cout << "\n=== Verificación del modelo cargado ===\n";
+  test_trainer.evaluate_test(); // ✅ usa el método que ya implementaste
+*/
+
   return 0;
 }

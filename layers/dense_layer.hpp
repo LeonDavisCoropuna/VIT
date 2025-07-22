@@ -3,7 +3,7 @@
 
 class DenseLayer : public Layer
 {
-private:
+public:
   Tensor weights;
   Tensor bias;
   Tensor input;
@@ -15,7 +15,6 @@ private:
   bool use_bias;
   bool training;
 
-public:
   DenseLayer(int in_features, int out_features, bool use_bias = true)
       : use_bias(use_bias), training(true)
   {
@@ -31,14 +30,50 @@ public:
     }
   }
 
+  void get_parameters(Tensor &out_weights, Tensor &out_bias) const
+  {
+    out_weights.shape = weights.shape;
+    out_weights.data = weights.data;
+
+    if (use_bias)
+    {
+      out_bias.shape = bias.shape;
+      out_bias.data = bias.data;
+    }
+    else
+    {
+      out_bias.shape = {};
+      out_bias.data.clear();
+    }
+  }
+
+  void set_parameters(const Tensor &new_weights, const Tensor &new_bias)
+  {
+    weights.shape = new_weights.shape;
+    weights.data = new_weights.data;
+
+    if (use_bias && !new_bias.data.empty())
+    {
+      bias.shape = new_bias.shape;
+      bias.data = new_bias.data;
+    }
+    else
+    {
+      bias.shape = {};
+      bias.data.clear();
+    }
+  }
+
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
     input = inputs[0];              // (N, in_features)
     output = input.matmul(weights); // (N, out_features)
+
     if (use_bias)
       output = output + bias.reshape({1, -1}); // broadcasting
 
-    return {output_deltas = output};
+    output_deltas = output;
+    return {output};
   }
 
   void backward(const Tensor *targets = nullptr,
@@ -53,11 +88,12 @@ public:
     {
       delta = next_layer->get_input_deltas();
     }
+
     Tensor input_T = input.transpose({1, 0}); // (in_features, N)
     grad_weights = input_T.matmul(delta);     // (in_features, out_features)
 
     if (use_bias)
-      grad_bias = delta.sum(0); // sum across batch
+      grad_bias = delta.sum(0); // sum across batch (eje 0 = filas)
 
     Tensor weights_T = weights.transpose({1, 0}); // (out_features, in_features)
     input_deltas = delta.matmul(weights_T);       // (N, in_features)
@@ -67,11 +103,9 @@ public:
   {
     if (optimizer)
     {
-      // std::cout << "[DEBUG] grad_weights.shape.size(): " << grad_weights.shape.size() << "  shape: " << grad_weights.printsummary() << "\n";
-      // std::cout << "[DEBUG] grad_bias.shape.size(): " << grad_bias.shape.size() << " shape: " << grad_bias.printsummary() << "\n";
-
       grad_weights = grad_weights / batch_size;
       grad_bias = grad_bias / batch_size;
+
       optimizer->update(weights, grad_weights,
                         bias, grad_bias);
     }
@@ -98,11 +132,17 @@ public:
   {
     return input_deltas;
   }
+
   const Tensor &get_last_input() const
   {
     return input;
   }
 
+  std::string get_type() const override
+  {
+    return "Dense";
+  }
+  
   bool has_weights() const override
   {
     return true;

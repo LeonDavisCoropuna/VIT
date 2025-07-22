@@ -46,4 +46,6 @@ public:
   {
     return input_deltas;
   }
+  std::string get_type() const override { return "Dropout"; }
+
 };

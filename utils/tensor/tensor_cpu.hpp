@@ -36,6 +36,30 @@ public:
     data.resize(total, 0.0f);
   }
 
+  void serialize(std::ostream &out) const
+  {
+    int dim = shape.size();
+    out.write(reinterpret_cast<const char *>(&dim), sizeof(int));
+    out.write(reinterpret_cast<const char *>(shape.data()), sizeof(int) * dim);
+
+    size_t data_size = data.size();
+    out.write(reinterpret_cast<const char *>(&data_size), sizeof(size_t));
+    out.write(reinterpret_cast<const char *>(data.data()), sizeof(float) * data_size);
+  }
+
+  void deserialize(std::istream &in)
+  {
+    int dim;
+    in.read(reinterpret_cast<char *>(&dim), sizeof(int));
+    shape.resize(dim);
+    in.read(reinterpret_cast<char *>(shape.data()), sizeof(int) * dim);
+
+    size_t data_size;
+    in.read(reinterpret_cast<char *>(&data_size), sizeof(size_t));
+    data.resize(data_size);
+    in.read(reinterpret_cast<char *>(data.data()), sizeof(float) * data_size);
+  }
+
   // -------------------- Inicialización --------------------
   static Tensor zeros(const std::vector<int> &shape)
   {
