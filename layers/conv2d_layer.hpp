@@ -222,28 +222,48 @@ public:
     return true;
   }
 
-  void save(std::ostream &out) const 
+   void get_parameters(Tensor &out_weights, Tensor &out_bias) const
   {
-    // Guardar shape y datos de weights
-    int w_dim = weights.shape.size();
-    int w_size = weights.data.size();
-    out.write(reinterpret_cast<const char *>(&w_dim), sizeof(int));
-    out.write(reinterpret_cast<const char *>(weights.shape.data()), w_dim * sizeof(int));
-    out.write(reinterpret_cast<const char *>(&w_size), sizeof(int));
-    out.write(reinterpret_cast<const char *>(weights.data.data()), w_size * sizeof(float));
-
-    // Guardar shape y datos de biases
-    int b_dim = biases.shape.size();
-    int b_size = biases.data.size();
-    out.write(reinterpret_cast<const char *>(&b_dim), sizeof(int));
-    out.write(reinterpret_cast<const char *>(biases.shape.data()), b_dim * sizeof(int));
-    out.write(reinterpret_cast<const char *>(&b_size), sizeof(int));
-    out.write(reinterpret_cast<const char *>(biases.data.data()), b_size * sizeof(float));
+    out_weights.shape = weights.shape;
+    out_weights.data = weights.data;
+    out_bias.shape = biases.shape;
+    out_bias.data = biases.data;
   }
 
-  void load(std::istream &in) 
+  void set_parameters(const Tensor &new_weights, const Tensor &new_bias)
   {
-    // Leer shape y datos de weights
+    weights.shape = new_weights.shape;
+    weights.data = new_weights.data;
+    biases.shape = new_bias.shape;
+    biases.data = new_bias.data;
+
+    // Reinitialize gradients to match the shape of the new parameters
+    grad_weights = Tensor::zeros(weights.shape);
+    grad_biases = Tensor::zeros(biases.shape);
+  }
+
+  void save(std::ostream &out) const
+  {
+    Tensor out_weights, out_bias;
+    get_parameters(out_weights, out_bias);
+
+    int w_dim = out_weights.shape.size();
+    int w_size = out_weights.data.size();
+    out.write(reinterpret_cast<const char *>(&w_dim), sizeof(int));
+    out.write(reinterpret_cast<const char *>(out_weights.shape.data()), w_dim * sizeof(int));
+    out.write(reinterpret_cast<const char *>(&w_size), sizeof(int));
+    out.write(reinterpret_cast<const char *>(out_weights.data.data()), w_size * sizeof(float));
+
+    int b_dim = out_bias.shape.size();
+    int b_size = out_bias.data.size();
+    out.write(reinterpret_cast<const char *>(&b_dim), sizeof(int));
+    out.write(reinterpret_cast<const char *>(out_bias.shape.data()), b_dim * sizeof(int));
+    out.write(reinterpret_cast<const char *>(&b_size), sizeof(int));
+    out.write(reinterpret_cast<const char *>(out_bias.data.data()), b_size * sizeof(float));
+  }
+
+  void load(std::istream &in)
+  {
     int w_dim, w_size;
     in.read(reinterpret_cast<char *>(&w_dim), sizeof(int));
     std::vector<int> w_shape(w_dim);
@@ -252,10 +272,6 @@ public:
     std::vector<float> w_data(w_size);
     in.read(reinterpret_cast<char *>(w_data.data()), w_size * sizeof(float));
 
-    weights.shape = w_shape;
-    weights.data = w_data;
-
-    // Leer shape y datos de biases
     int b_dim, b_size;
     in.read(reinterpret_cast<char *>(&b_dim), sizeof(int));
     std::vector<int> b_shape(b_dim);
@@ -264,7 +280,12 @@ public:
     std::vector<float> b_data(b_size);
     in.read(reinterpret_cast<char *>(b_data.data()), b_size * sizeof(float));
 
-    biases.shape = b_shape;
-    biases.data = b_data;
+    Tensor w_tensor, b_tensor;
+    w_tensor.shape = w_shape;
+    w_tensor.data = w_data;
+    b_tensor.shape = b_shape;
+    b_tensor.data = b_data;
+
+    set_parameters(w_tensor, b_tensor);
   }
 };

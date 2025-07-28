@@ -229,4 +229,86 @@ public:
   }
 
   const Tensor &get_input_deltas() const override { return input_deltas; }
+
+   std::string get_type() const override
+  {
+    return "MultiHeadAttention";
+  }
+
+  std::vector<Tensor> get_parameters() const
+  {
+    std::vector<Tensor> params;
+    Tensor weights, bias;
+    for (int h = 0; h < num_heads; ++h)
+    {
+      query_linears[h]->get_parameters(weights, bias);
+      params.push_back(weights);
+      key_linears[h]->get_parameters(weights, bias);
+      params.push_back(weights);
+      value_linears[h]->get_parameters(weights, bias);
+      params.push_back(weights);
+    }
+    output_linear->get_parameters(weights, bias);
+    params.push_back(weights);
+    return params;
+  }
+
+  void set_parameters(const std::vector<Tensor> &new_params)
+  {
+    size_t expected_params = 3 * num_heads + 1; // 3 por cabeza (Q, K, V) + 1 para output
+    if (new_params.size() != expected_params)
+      throw std::runtime_error("MultiHeadAttention: Expected " + std::to_string(expected_params) +
+                               " parameter tensors, got " + std::to_string(new_params.size()));
+
+    size_t param_index = 0;
+    Tensor empty_bias; // DenseLayer sin bias
+    for (int h = 0; h < num_heads; ++h)
+    {
+      query_linears[h]->set_parameters(new_params[param_index++], empty_bias);
+      key_linears[h]->set_parameters(new_params[param_index++], empty_bias);
+      value_linears[h]->set_parameters(new_params[param_index++], empty_bias);
+    }
+    output_linear->set_parameters(new_params[param_index], empty_bias);
+  }
+
+  void save(std::ostream &out) const
+  {
+    std::vector<Tensor> params = get_parameters();
+    int num_params = params.size();
+    out.write(reinterpret_cast<const char *>(&num_params), sizeof(int));
+    for (const auto &param : params)
+    {
+      int p_dim = param.shape.size();
+      int p_size = param.data.size();
+      out.write(reinterpret_cast<const char *>(&p_dim), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.shape.data()), p_dim * sizeof(int));
+      out.write(reinterpret_cast<const char *>(&p_size), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.data.data()), p_size * sizeof(float));
+    }
+  }
+
+  void load(std::istream &in)
+  {
+    int num_params;
+    in.read(reinterpret_cast<char *>(&num_params), sizeof(int));
+    size_t expected_params = 3 * num_heads + 1;
+    if (num_params != static_cast<int>(expected_params))
+      throw std::runtime_error("MultiHeadAttention: Expected " + std::to_string(expected_params) +
+                               " parameter tensors, got " + std::to_string(num_params));
+    std::vector<Tensor> params(num_params);
+    for (int i = 0; i < num_params; ++i)
+    {
+      int p_dim, p_size;
+      in.read(reinterpret_cast<char *>(&p_dim), sizeof(int));
+      std::vector<int> p_shape(p_dim);
+      in.read(reinterpret_cast<char *>(p_shape.data()), p_dim * sizeof(int));
+      in.read(reinterpret_cast<char *>(&p_size), sizeof(int));
+      std::vector<float> p_data(p_size);
+      in.read(reinterpret_cast<char *>(p_data.data()), p_size * sizeof(float));
+      params[i].shape = p_shape;
+      params[i].data = p_data;
+    }
+    set_parameters(params);
+  }
+  
 };

@@ -74,7 +74,6 @@ public:
     // x shape (N, C, H, W) : [N, in_channels, H, W]
     // x data length: N * C * H * W
 
-
     input_cache = x;
 
     if (tokenizer_type == "filter")
@@ -84,7 +83,6 @@ public:
       t = tokenizer->forward({x})[0];
       // t tiene la forma (N, tokens, token_channels) = [128, 16, 32]
       // t data length: N * tokens * token_channels
-
     }
     else
     {
@@ -104,15 +102,11 @@ public:
     // t after forward: [16, 128, 32] = (tokens, N, attn_dim)
     // t data length after forward: tokens * N * attn_dim
 
-
-
     // (L, N, C) -> (N, L, C)
     // t before permute: [16, 128, 32]
     t = t.permute({1, 0, 2});
     // t after permute: [128, 16, 32]
     // t data length after permute: N * tokens * attn_dim
-
-
 
     token_cache = t;
     Tensor out;
@@ -225,5 +219,159 @@ public:
     }
   }
   void set_training(bool is_training_) override { is_training = is_training_; }
+  /*
+  void set_training(bool is_training_) override
+  {
+    is_training = is_training_;
+    tokenizer->set_training(is_training);
+    transformer->set_training(is_training);
+    if (is_projected && projector)
+      projector->set_training(is_training);
+  }
+  */
   const Tensor &get_input_deltas() const override { return input_deltas; }
+
+  bool has_weights() const override
+  {
+    return true;
+  }
+
+  std::string get_type() const override
+  {
+    return "VisualTransformer";
+  }
+
+  std::vector<Tensor> get_parameters() const
+  {
+    std::vector<Tensor> params;
+
+    // Obtener parámetros del tokenizer
+    if (tokenizer->has_weights())
+    {
+      std::vector<Tensor> tokenizer_params = tokenizer->get_parameters();
+      params.insert(params.end(), tokenizer_params.begin(), tokenizer_params.end());
+    }
+
+    // Obtener parámetros del transformer
+    if (transformer->has_weights())
+    {
+      std::vector<Tensor> transformer_params = transformer->get_parameters();
+      params.insert(params.end(), transformer_params.begin(), transformer_params.end());
+    }
+
+    // Obtener parámetros del projector (si existe)
+    if (is_projected && projector && projector->has_weights())
+    {
+      std::vector<Tensor> projector_params = projector->get_parameters();
+      params.insert(params.end(), projector_params.begin(), projector_params.end());
+    }
+
+    return params;
+  }
+
+  void set_parameters(const std::vector<Tensor> &new_params)
+  {
+    size_t param_index = 0;
+
+    // Establecer parámetros del tokenizer
+    if (tokenizer->has_weights())
+    {
+      std::vector<Tensor> tokenizer_params = tokenizer->get_parameters();
+      std::vector<Tensor> new_tokenizer_params(
+          new_params.begin() + param_index,
+          new_params.begin() + param_index + tokenizer_params.size());
+      tokenizer->set_parameters(new_tokenizer_params);
+      param_index += tokenizer_params.size();
+    }
+
+    // Establecer parámetros del transformer
+    if (transformer->has_weights())
+    {
+      std::vector<Tensor> transformer_params = transformer->get_parameters();
+      std::vector<Tensor> new_transformer_params(
+          new_params.begin() + param_index,
+          new_params.begin() + param_index + transformer_params.size());
+      transformer->set_parameters(new_transformer_params);
+      param_index += transformer_params.size();
+    }
+
+    // Establecer parámetros del projector (si existe)
+    if (is_projected && projector && projector->has_weights())
+    {
+      std::vector<Tensor> projector_params = projector->get_parameters();
+      std::vector<Tensor> new_projector_params(
+          new_params.begin() + param_index,
+          new_params.begin() + param_index + projector_params.size());
+      projector->set_parameters(new_projector_params);
+    }
+  }
+
+  void save(std::ostream &out) const
+  {
+    // Guardar parámetros del tokenizer
+    std::string tokenizer_type_str = tokenizer->get_type();
+    int tokenizer_type_len = tokenizer_type_str.size();
+    out.write(reinterpret_cast<const char *>(&tokenizer_type_len), sizeof(int));
+    out.write(tokenizer_type_str.c_str(), tokenizer_type_len);
+    tokenizer->save(out);
+
+    // Guardar parámetros del transformer
+    std::string transformer_type = transformer->get_type();
+    int transformer_type_len = transformer_type.size();
+    out.write(reinterpret_cast<const char *>(&transformer_type_len), sizeof(int));
+    out.write(transformer_type.c_str(), transformer_type_len);
+    transformer->save(out);
+
+    // Guardar parámetros del projector (si existe)
+    int has_projector = is_projected && projector ? 1 : 0;
+    out.write(reinterpret_cast<const char *>(&has_projector), sizeof(int));
+    if (has_projector)
+    {
+      std::string projector_type = projector->get_type();
+      int projector_type_len = projector_type.size();
+      out.write(reinterpret_cast<const char *>(&projector_type_len), sizeof(int));
+      out.write(projector_type.c_str(), projector_type_len);
+      projector->save(out);
+    }
+  }
+
+  void load(std::istream &in)
+  {
+    // Cargar parámetros del tokenizer
+    int tokenizer_type_len;
+    in.read(reinterpret_cast<char *>(&tokenizer_type_len), sizeof(int));
+    std::string tokenizer_type_str(tokenizer_type_len, ' ');
+    in.read(&tokenizer_type_str[0], tokenizer_type_len);
+    if (tokenizer_type_str != tokenizer->get_type())
+      throw std::runtime_error("Tipo de tokenizer no coincide: esperado " + tokenizer->get_type() +
+                               ", encontrado " + tokenizer_type_str);
+    tokenizer->load(in);
+
+    // Cargar parámetros del transformer
+    int transformer_type_len;
+    in.read(reinterpret_cast<char *>(&transformer_type_len), sizeof(int));
+    std::string transformer_type(transformer_type_len, ' ');
+    in.read(&transformer_type[0], transformer_type_len);
+    if (transformer_type != transformer->get_type())
+      throw std::runtime_error("Tipo de transformer no coincide: esperado " + transformer->get_type() +
+                               ", encontrado " + transformer_type);
+    transformer->load(in);
+
+    // Cargar parámetros del projector (si existe)
+    int has_projector;
+    in.read(reinterpret_cast<char *>(&has_projector), sizeof(int));
+    if (has_projector != (is_projected && projector ? 1 : 0))
+      throw std::runtime_error("Configuración de projector no coincide");
+    if (has_projector)
+    {
+      int projector_type_len;
+      in.read(reinterpret_cast<char *>(&projector_type_len), sizeof(int));
+      std::string projector_type(projector_type_len, ' ');
+      in.read(&projector_type[0], projector_type_len);
+      if (projector_type != projector->get_type())
+        throw std::runtime_error("Tipo de projector no coincide: esperado " + projector->get_type() +
+                                 ", encontrado " + projector_type);
+      projector->load(in);
+    }
+  }
 };
