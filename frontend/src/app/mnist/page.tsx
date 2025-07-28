@@ -56,8 +56,8 @@ const MNISTPage = () => {
       }
 
       const data = await response.json();
-      setPrediction(data.prediction);
-      setConfidence(data.confidence);
+      setPrediction(data.digits?.[0] ?? null);
+      setConfidence(1);
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error inesperado.');
     } finally {
@@ -139,11 +139,6 @@ const MNISTPage = () => {
                   <div className="text-4xl font-bold text-green-700 mb-2">
                     {prediction}
                   </div>
-                  {confidence !== null && (
-                    <p className="text-sm text-green-600">
-                      Confianza: {(confidence * 100).toFixed(1)}%
-                    </p>
-                  )}
                 </div>
               </div>
             )}

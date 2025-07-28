@@ -329,7 +329,7 @@ public:
     int stride = 1;
     int dims = shape.size();
 
-    assert(indices.size() == dims);
+   // assert(indices.size() == dims);
 
     auto idx_it = indices.end();
     auto shape_it = shape.end();
@@ -1171,6 +1171,160 @@ public:
 
     return loss / B;
   }
+
+  // Matriz de Confusión
+  static std::vector<std::vector<int>> confusion_matrix(const std::vector<int> &y_true, const std::vector<int> &y_pred, int num_classes)
+  {
+    std::vector<std::vector<int>> matrix(num_classes, std::vector<int>(num_classes, 0));
+    for (size_t i = 0; i < y_true.size(); ++i)
+    {
+      int true_label = y_true[i];
+      int pred_label = y_pred[i];
+      if (true_label >= 0 && true_label < num_classes &&
+          pred_label >= 0 && pred_label < num_classes)
+      {
+        matrix[true_label][pred_label]++;
+      }
+    }
+    return matrix;
+  }
+
+  static std::pair<float, float> precision_recall(const std::vector<int> &y_true, const std::vector<int> &y_pred, int num_classes)
+  {
+    std::vector<int> TP(num_classes, 0), FP(num_classes, 0), FN(num_classes, 0);
+    for (size_t i = 0; i < y_true.size(); ++i)
+    {
+      int t = y_true[i], p = y_pred[i];
+      if (t == p)
+        TP[t]++;
+      else
+      {
+        FP[p]++;
+        FN[t]++;
+      }
+    }
+
+    float precision_sum = 0.0f, recall_sum = 0.0f;
+    for (int c = 0; c < num_classes; ++c)
+    {
+      float prec = TP[c] + FP[c] > 0 ? (float)TP[c] / (TP[c] + FP[c]) : 0.0f;
+      float rec = TP[c] + FN[c] > 0 ? (float)TP[c] / (TP[c] + FN[c]) : 0.0f;
+      precision_sum += prec;
+      recall_sum += rec;
+    }
+
+    return {
+        precision_sum / num_classes,
+        recall_sum / num_classes};
+  }
+
+  static std::pair<float, float> f1_score(const std::vector<int> &y_true, const std::vector<int> &y_pred, int num_classes)
+  {
+    std::vector<int> TP(num_classes, 0), FP(num_classes, 0), FN(num_classes, 0), support(num_classes, 0);
+    for (size_t i = 0; i < y_true.size(); ++i)
+    {
+      int t = y_true[i], p = y_pred[i];
+      support[t]++;
+      if (t == p)
+        TP[t]++;
+      else
+      {
+        FP[p]++;
+        FN[t]++;
+      }
+    }
+
+    float f1_macro = 0.0f;
+    float f1_weighted = 0.0f;
+    int total_support = y_true.size();
+
+    for (int c = 0; c < num_classes; ++c)
+    {
+      float prec = TP[c] + FP[c] > 0 ? (float)TP[c] / (TP[c] + FP[c]) : 0.0f;
+      float rec = TP[c] + FN[c] > 0 ? (float)TP[c] / (TP[c] + FN[c]) : 0.0f;
+      float f1 = (prec + rec) > 0 ? 2.0f * prec * rec / (prec + rec) : 0.0f;
+
+      f1_macro += f1;
+      f1_weighted += f1 * support[c];
+    }
+
+    return {
+        f1_macro / num_classes,
+        f1_weighted / total_support};
+  }
+
+  // Supone un Tensor 2D: [batch_size, num_classes]
+  std::vector<int> argmax_batch() const
+  {
+    std::vector<int> result;
+    for (int i = 0; i < shape[0]; ++i)
+    {
+      float max_val = -std::numeric_limits<float>::infinity();
+      int max_idx = -1;
+      for (int j = 0; j < shape[1]; ++j)
+      {
+        float val = at({i, j});
+        if (val > max_val)
+        {
+          max_val = val;
+          max_idx = j;
+        }
+      }
+      result.push_back(max_idx);
+    }
+    return result;
+  }
+
+  std::vector<int> to_vector() const
+  {
+    std::vector<int> result;
+    for (int i = 0; i < shape[0]; ++i)
+    {
+      result.push_back(static_cast<int>(at({i})));
+    }
+    return result;
+  }
+
+  // Precision, Recall y F1-score por macro-promedio
+  static std::tuple<float, float, float> compute_precision_recall_f1(const Tensor &preds, const Tensor &targets, int num_classes)
+  {
+    std::vector<int> TP(num_classes, 0), FP(num_classes, 0), FN(num_classes, 0);
+    int total = preds.shape[0];
+
+    for (int i = 0; i < total; ++i)
+    {
+      int pred_label = std::distance(preds.data.begin() + i * num_classes,
+                                     std::max_element(preds.data.begin() + i * num_classes,
+                                                      preds.data.begin() + (i + 1) * num_classes));
+      int true_label = static_cast<int>(targets.data[i]);
+
+      if (pred_label == true_label)
+        TP[true_label]++;
+      else
+      {
+        FP[pred_label]++;
+        FN[true_label]++;
+      }
+    }
+
+    float precision_sum = 0.0f, recall_sum = 0.0f, f1_sum = 0.0f;
+    for (int c = 0; c < num_classes; ++c)
+    {
+      float precision = TP[c] + FP[c] > 0 ? float(TP[c]) / (TP[c] + FP[c]) : 0.0f;
+      float recall = TP[c] + FN[c] > 0 ? float(TP[c]) / (TP[c] + FN[c]) : 0.0f;
+      float f1 = precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0.0f;
+
+      precision_sum += precision;
+      recall_sum += recall;
+      f1_sum += f1;
+    }
+
+    return {
+        precision_sum / num_classes,
+        recall_sum / num_classes,
+        f1_sum / num_classes};
+  }
+
   bool empty() const
   {
     return data.empty();

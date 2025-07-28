@@ -63,9 +63,9 @@ public:
         // Solo imprime si toca
         if (log_every > 0 && batches % log_every == 0)
         {
-          //std::cout << "  Batch " << batches << "/" << total_batches
-          //          << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
-          //          << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
+          // std::cout << "  Batch " << batches << "/" << total_batches
+          //           << " | Loss: " << std::fixed << std::setprecision(4) << batch_loss
+          //           << " | Accuracy: " << std::setprecision(4) << batch_acc * 100.0f << "%\n";
         }
       }
 
@@ -101,7 +101,11 @@ public:
     float test_acc = 0.0f;
     int batches = 0;
 
+    std::vector<int> true_labels;
+    std::vector<int> pred_labels;
+
     model.set_training(false);
+
     while (test_loader->has_next())
     {
       auto [X, y_tensor] = test_loader->next_batch();
@@ -112,10 +116,42 @@ public:
       test_loss += Tensor::compute_loss(preds, y_onehot);
       test_acc += Tensor::compute_accuracy(preds, y_tensor, num_classes);
       ++batches;
+
+      // Recolectar predicciones e y reales
+      std::vector<int> y_pred = preds.argmax_batch(); // vector<int>
+      std::vector<int> y_true = y_tensor.to_vector(); // vector<int>
+
+      true_labels.insert(true_labels.end(), y_true.begin(), y_true.end());
+      pred_labels.insert(pred_labels.end(), y_pred.begin(), y_pred.end());
     }
 
     std::cout << "[TEST] Final Evaluation — Loss: " << (test_loss / batches)
               << " | Accuracy: " << (test_acc / batches) * 100.0f << "%\n";
+/*
+    // Otras métricas
+    auto [f1_macro, f1_weighted] = Tensor::f1_score(true_labels, pred_labels, num_classes);
+    auto [precision_macro, recall_macro] = Tensor::precision_recall(true_labels, pred_labels, num_classes);
+    auto confusion = Tensor::confusion_matrix(true_labels, pred_labels, num_classes);
+
+    std::cout << " - F1 Score (macro):    " << f1_macro << "\n";
+    std::cout << " - F1 Score (weighted): " << f1_weighted << "\n";
+    std::cout << " - Precision (macro):   " << precision_macro << "\n";
+    std::cout << " - Recall (macro):      " << recall_macro << "\n";
+
+    // Imprimir matriz de confusión
+    std::cout << "\n🧩 Matriz de Confusión:\n    ";
+    for (int j = 0; j < num_classes; ++j)
+      std::cout << std::setw(4) << j;
+    std::cout << "\n";
+
+    for (int i = 0; i < num_classes; ++i)
+    {
+      std::cout << std::setw(2) << i << ": ";
+      for (int j = 0; j < num_classes; ++j)
+        std::cout << std::setw(4) << confusion[i][j];
+      std::cout << "\n";
+    }
+/*/
     model.set_training(true);
   }
 
@@ -145,4 +181,49 @@ public:
               << " | Accuracy: " << (val_acc / batches) * 100.0f << "%\n";
     model.set_training(true);
   }
+
+  int predict(const std::vector<float> &image_data)
+  {
+    if (image_data.size() != 28 * 28)
+      throw std::runtime_error("La imagen debe ser de tamaño 28x28");
+
+    Tensor input({1, 1, 28, 28}, image_data); // Crea un tensor con batch=1
+    model.set_training(false);                // Desactiva dropout
+    Tensor out = model.forward(input);        // Ejecuta forward
+
+    out.printsummary();
+
+    // Asumimos que out tiene forma [1, 10], queremos argmax sobre ese vector
+    float max_val = out.data[0];
+    int max_idx = 0;
+    for (int i = 1; i < out.data.size(); ++i)
+    {
+      if (out.data[i] > max_val)
+      {
+        max_val = out.data[i];
+        max_idx = i;
+      }
+    }
+
+    return max_idx;
+  }
+
+ static float compute_accuracy(const Tensor &preds, const Tensor &targets, int num_classes)
+  {
+    int correct = 0;
+    int total = preds.shape[0];
+
+    for (int i = 0; i < total; ++i)
+    {
+      int pred_label = std::distance(preds.data.begin() + i * num_classes,
+                                     std::max_element(preds.data.begin() + i * num_classes,
+                                                      preds.data.begin() + (i + 1) * num_classes));
+      int true_label = static_cast<int>(targets.data[i]);
+      if (pred_label == true_label)
+        ++correct;
+    }
+
+    return static_cast<float>(correct) / total;
+  }
+
 };
