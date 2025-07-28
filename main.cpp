@@ -83,7 +83,7 @@ int main()
   Trainer test_trainer(mlp_loaded, train_loader, val_loader, num_classes, batch_size, &test_loader);
 
   std::cout << "\n=== Verificación del modelo cargado ===\n";
-  //test_trainer.evaluate_test(); // ✅ usa el método que ya implementaste
+  test_trainer.evaluate_test(); // ✅ usa el método que ya implementaste
 
   //std::cout << "\n🔍 Cargando imágenes personalizadas desde 'custom_images/'...\n";
   Dataset custom_data = load_custom_images_from_folder("custom_images/");
