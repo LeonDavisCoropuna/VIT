@@ -388,10 +388,10 @@ public:
 
     int g_dim = out_gamma.shape.size();
     int g_size = out_gamma.data.size();
-    std::cout << "[SAVE] BatchNorm2DLayer gamma shape: [";
-    for (int s : out_gamma.shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << g_size << "\n";
+    //std::cout << "[SAVE] BatchNorm2DLayer gamma shape: [";
+    //for (int s : out_gamma.shape)
+     // std::cout << s << " ";
+    //std::cout << "], size: " << g_size << "\n";
     out.write(reinterpret_cast<const char *>(&g_dim), sizeof(int));
     out.write(reinterpret_cast<const char *>(out_gamma.shape.data()), g_dim * sizeof(int));
     out.write(reinterpret_cast<const char *>(&g_size), sizeof(int));
@@ -399,10 +399,10 @@ public:
 
     int b_dim = out_beta.shape.size();
     int b_size = out_beta.data.size();
-    std::cout << "[SAVE] BatchNorm2DLayer beta shape: [";
-    for (int s : out_beta.shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << b_size << "\n";
+    //std::cout << "[SAVE] BatchNorm2DLayer beta shape: [";
+    //for (int s : out_beta.shape)
+    //  std::cout << s << " ";
+   // std::cout << "], size: " << b_size << "\n";
     out.write(reinterpret_cast<const char *>(&b_dim), sizeof(int));
     out.write(reinterpret_cast<const char *>(out_beta.shape.data()), b_dim * sizeof(int));
     out.write(reinterpret_cast<const char *>(&b_size), sizeof(int));
@@ -410,10 +410,10 @@ public:
 
     int rm_dim = running_mean.shape.size();
     int rm_size = running_mean.data.size();
-    std::cout << "[SAVE] BatchNorm2DLayer running_mean shape: [";
-    for (int s : running_mean.shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << rm_size << "\n";
+    //std::cout << "[SAVE] BatchNorm2DLayer running_mean shape: [";
+    //for (int s : running_mean.shape)
+     // std::cout << s << " ";
+    //std::cout << "], size: " << rm_size << "\n";
     out.write(reinterpret_cast<const char *>(&rm_dim), sizeof(int));
     out.write(reinterpret_cast<const char *>(running_mean.shape.data()), rm_dim * sizeof(int));
     out.write(reinterpret_cast<const char *>(&rm_size), sizeof(int));
@@ -421,10 +421,10 @@ public:
 
     int rv_dim = running_var.shape.size();
     int rv_size = running_var.data.size();
-    std::cout << "[SAVE] BatchNorm2DLayer running_var shape: [";
-    for (int s : running_var.shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << rv_size << "\n";
+    //std::cout << "[SAVE] BatchNorm2DLayer running_var shape: [";
+    //for (int s : running_var.shape)
+     // std::cout << s << " ";
+    //std::cout << "], size: " << rv_size << "\n";
     out.write(reinterpret_cast<const char *>(&rv_dim), sizeof(int));
     out.write(reinterpret_cast<const char *>(running_var.shape.data()), rv_dim * sizeof(int));
     out.write(reinterpret_cast<const char *>(&rv_size), sizeof(int));
@@ -441,9 +441,9 @@ public:
     std::vector<float> g_data(g_size);
     in.read(reinterpret_cast<char *>(g_data.data()), g_size * sizeof(float));
     std::cout << "[LOAD] BatchNorm2DLayer gamma shape: [";
-    for (int s : g_shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << g_size << "\n";
+    //for (int s : g_shape)
+      //std::cout << s << " ";
+    //std::cout << "], size: " << g_size << "\n";
 
     int b_dim, b_size;
     in.read(reinterpret_cast<char *>(&b_dim), sizeof(int));
@@ -452,10 +452,10 @@ public:
     in.read(reinterpret_cast<char *>(&b_size), sizeof(int));
     std::vector<float> b_data(b_size);
     in.read(reinterpret_cast<char *>(b_data.data()), b_size * sizeof(float));
-    std::cout << "[LOAD] BatchNorm2DLayer beta shape: [";
-    for (int s : b_shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << b_size << "\n";
+    //std::cout << "[LOAD] BatchNorm2DLayer beta shape: [";
+    //for (int s : b_shape)
+      //std::cout << s << " ";
+    //std::cout << "], size: " << b_size << "\n";
 
     int rm_dim, rm_size;
     in.read(reinterpret_cast<char *>(&rm_dim), sizeof(int));
@@ -464,10 +464,10 @@ public:
     in.read(reinterpret_cast<char *>(&rm_size), sizeof(int));
     std::vector<float> rm_data(rm_size);
     in.read(reinterpret_cast<char *>(rm_data.data()), rm_size * sizeof(float));
-    std::cout << "[LOAD] BatchNorm2DLayer running_mean shape: [";
-    for (int s : rm_shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << rm_size << "\n";
+    //std::cout << "[LOAD] BatchNorm2DLayer running_mean shape: [";
+    //for (int s : rm_shape)
+      //std::cout << s << " ";
+    //std::cout << "], size: " << rm_size << "\n";
 
     int rv_dim, rv_size;
     in.read(reinterpret_cast<char *>(&rv_dim), sizeof(int));
@@ -476,10 +476,10 @@ public:
     in.read(reinterpret_cast<char *>(&rv_size), sizeof(int));
     std::vector<float> rv_data(rv_size);
     in.read(reinterpret_cast<char *>(rv_data.data()), rv_size * sizeof(float));
-    std::cout << "[LOAD] BatchNorm2DLayer running_var shape: [";
-    for (int s : rv_shape)
-      std::cout << s << " ";
-    std::cout << "], size: " << rv_size << "\n";
+   // std::cout << "[LOAD] BatchNorm2DLayer running_var shape: [";
+   // for (int s : rv_shape)
+   //   std::cout << s << " ";
+   // std::cout << "], size: " << rv_size << "\n";
 
     Tensor g_tensor, b_tensor, rm_tensor, rv_tensor;
     g_tensor.shape = g_shape;

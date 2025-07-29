@@ -117,9 +117,9 @@ public:
       test_acc += Tensor::compute_accuracy(preds, y_tensor, num_classes);
       ++batches;
 
-      // Recolectar predicciones e y reales
-      std::vector<int> y_pred = preds.argmax_batch(); // vector<int>
-      std::vector<int> y_true = y_tensor.to_vector(); // vector<int>
+      // Recolectar predicciones y reales
+      std::vector<int> y_pred = Tensor::argmax_batch(preds); // vector<int>
+      std::vector<int> y_true = y_tensor.to_vector();        // vector<int>
 
       true_labels.insert(true_labels.end(), y_true.begin(), y_true.end());
       pred_labels.insert(pred_labels.end(), y_pred.begin(), y_pred.end());
@@ -127,18 +127,32 @@ public:
 
     std::cout << "[TEST] Final Evaluation — Loss: " << (test_loss / batches)
               << " | Accuracy: " << (test_acc / batches) * 100.0f << "%\n";
-/*
-    // Otras métricas
-    auto [f1_macro, f1_weighted] = Tensor::f1_score(true_labels, pred_labels, num_classes);
-    auto [precision_macro, recall_macro] = Tensor::precision_recall(true_labels, pred_labels, num_classes);
+
+    // Compute metrics
+    auto [f1_macro, f1_weighted, f1_scores] = Tensor::f1_score(true_labels, pred_labels, num_classes);
+    auto [precision_macro, recall_macro, precisions, recalls] = Tensor::precision_recall(true_labels, pred_labels, num_classes);
     auto confusion = Tensor::confusion_matrix(true_labels, pred_labels, num_classes);
 
+    // Print aggregate metrics
     std::cout << " - F1 Score (macro):    " << f1_macro << "\n";
     std::cout << " - F1 Score (weighted): " << f1_weighted << "\n";
     std::cout << " - Precision (macro):   " << precision_macro << "\n";
     std::cout << " - Recall (macro):      " << recall_macro << "\n";
 
-    // Imprimir matriz de confusión
+    // Print per-class metrics
+    std::cout << "\n📊 Per-Class Metrics:\n";
+    std::cout << std::setw(8) << "Class" << std::setw(12) << "Precision" << std::setw(12) << "Recall" << std::setw(12) << "F1 Score" << "\n";
+    std::cout << std::string(44, '-') << "\n";
+    for (int i = 0; i < num_classes; ++i)
+    {
+      std::cout << std::setw(8) << i
+                << std::fixed << std::setprecision(4)
+                << std::setw(12) << precisions[i]
+                << std::setw(12) << recalls[i]
+                << std::setw(12) << f1_scores[i] << "\n";
+    }
+
+    // Print confusion matrix
     std::cout << "\n🧩 Matriz de Confusión:\n    ";
     for (int j = 0; j < num_classes; ++j)
       std::cout << std::setw(4) << j;
@@ -151,7 +165,7 @@ public:
         std::cout << std::setw(4) << confusion[i][j];
       std::cout << "\n";
     }
-/*/
+
     model.set_training(true);
   }
 
@@ -208,7 +222,7 @@ public:
     return max_idx;
   }
 
- static float compute_accuracy(const Tensor &preds, const Tensor &targets, int num_classes)
+  static float compute_accuracy(const Tensor &preds, const Tensor &targets, int num_classes)
   {
     int correct = 0;
     int total = preds.shape[0];
@@ -225,5 +239,4 @@ public:
 
     return static_cast<float>(correct) / total;
   }
-
 };

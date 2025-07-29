@@ -71,17 +71,17 @@ export async function POST(request: Request) {
 }
 
 async function runCppShellScript(imagePath: string): Promise<{ digits: number[]; count: number }> {
-
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(process.cwd(), '../run.sh');
 
     console.log('🚀 Ejecutando script:', scriptPath);
 
-    const child = spawn('bash', [scriptPath, 'main', '--no-build'], {
+    // Modo: predict (no entrenar), dataset: mnist, epocas: 0, sin recompilar
+    const child = spawn('bash', [scriptPath, 'main', 'mnist', 'predict', '0', '--no-build'], {
       cwd: path.join(process.cwd(), '..'),
       env: {
         ...process.env,
-        INPUT_IMAGE: imagePath
+        INPUT_IMAGE: imagePath  // <- imagen enviada por entorno
       }
     });
 
@@ -103,7 +103,6 @@ async function runCppShellScript(imagePath: string): Promise<{ digits: number[];
       }
 
       try {
-        // Separar las líneas que contengan "Imagen predicción:"
         const matches = stdout
           .split('\n')
           .filter(line => line.includes('Imagen predicción:'))
@@ -112,13 +111,13 @@ async function runCppShellScript(imagePath: string): Promise<{ digits: number[];
             return parts.length === 2 ? parseInt(parts[1].trim(), 10) : null;
           })
           .filter(val => val !== null);
-      
+
         if (matches.length === 0) {
           throw new Error("No se encontraron predicciones válidas en la salida");
         }
-      
+
         resolve({
-          digits: matches, // Retorna todos los dígitos
+          digits: matches,
           count: matches.length
         });
       } catch (err) {

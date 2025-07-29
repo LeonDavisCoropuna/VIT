@@ -280,13 +280,13 @@ public:
       throw std::runtime_error("No se pudo abrir el archivo para guardar el modelo: " + filename);
 
     int num_layers = 2 + vt_layers_num + 1;
-    std::cout << "[SAVE] Number of layers: " << num_layers << "\n";
+    //std::cout << "[SAVE] Number of layers: " << num_layers << "\n";
     out.write(reinterpret_cast<const char *>(&num_layers), sizeof(int));
 
     // Conv2DLayer
     std::string conv_type = conv_layer->get_type();
     int conv_type_len = conv_type.size();
-    std::cout << "[SAVE] Conv2DLayer type: " << conv_type << ", length: " << conv_type_len << "\n";
+    //std::cout << "[SAVE] Conv2DLayer type: " << conv_type << ", length: " << conv_type_len << "\n";
     out.write(reinterpret_cast<const char *>(&conv_type_len), sizeof(int));
     out.write(conv_type.c_str(), conv_type_len);
     if (conv_layer->has_weights())
@@ -295,20 +295,20 @@ public:
       conv_layer->get_parameters(weights, bias);
       int w_dim = weights.shape.size();
       int w_size = weights.data.size();
-      std::cout << "[SAVE] Conv2DLayer weights shape: [";
-      for (int s : weights.shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << w_size << "\n";
+      //std::cout << "[SAVE] Conv2DLayer weights shape: [";
+      //for (int s : weights.shape)
+      //  std::cout << s << " ";
+      //std::cout << "], size: " << w_size << "\n";
       out.write(reinterpret_cast<const char *>(&w_dim), sizeof(int));
       out.write(reinterpret_cast<const char *>(weights.shape.data()), w_dim * sizeof(int));
       out.write(reinterpret_cast<const char *>(&w_size), sizeof(int));
       out.write(reinterpret_cast<const char *>(weights.data.data()), w_size * sizeof(float));
       int b_dim = bias.shape.size();
       int b_size = bias.data.size();
-      std::cout << "[SAVE] Conv2DLayer bias shape: [";
-      for (int s : bias.shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << b_size << "\n";
+      //std::cout << "[SAVE] Conv2DLayer bias shape: [";
+      ///or (int s : bias.shape)
+      // std::cout << s << " ";
+     // std::cout << "], size: " << b_size << "\n";
       out.write(reinterpret_cast<const char *>(&b_dim), sizeof(int));
       out.write(reinterpret_cast<const char *>(bias.shape.data()), b_dim * sizeof(int));
       out.write(reinterpret_cast<const char *>(&b_size), sizeof(int));
@@ -318,7 +318,7 @@ public:
     // BatchNorm2DLayer
     std::string bn_type = bn->get_type();
     int bn_type_len = bn_type.size();
-    std::cout << "[SAVE] BatchNorm2DLayer type: " << bn_type << ", length: " << bn_type_len << "\n";
+    //std::cout << "[SAVE] BatchNorm2DLayer type: " << bn_type << ", length: " << bn_type_len << "\n";
     out.write(reinterpret_cast<const char *>(&bn_type_len), sizeof(int));
     out.write(bn_type.c_str(), bn_type_len);
     if (bn->has_weights())
@@ -331,24 +331,24 @@ public:
     {
       std::string vt_type = vt->get_type();
       int vt_type_len = vt_type.size();
-      std::cout << "[SAVE] VisualTransformer type: " << vt_type << ", length: " << vt_type_len << "\n";
+      //std::cout << "[SAVE] VisualTransformer type: " << vt_type << ", length: " << vt_type_len << "\n";
       out.write(reinterpret_cast<const char *>(&vt_type_len), sizeof(int));
       out.write(vt_type.c_str(), vt_type_len);
       if (vt->has_weights())
       {
         std::vector<Tensor> vt_params = vt->get_parameters();
         int num_params = vt_params.size();
-        std::cout << "[SAVE] VisualTransformer num_params: " << num_params << "\n";
+        //std::cout << "[SAVE] VisualTransformer num_params: " << num_params << "\n";
         out.write(reinterpret_cast<const char *>(&num_params), sizeof(int));
         for (int i = 0; i < num_params; ++i)
         {
           const auto &param = vt_params[i];
           int p_dim = param.shape.size();
           int p_size = param.data.size();
-          std::cout << "[SAVE] VisualTransformer param " << i << " shape: [";
-          for (int s : param.shape)
-            std::cout << s << " ";
-          std::cout << "], size: " << p_size << "\n";
+          //std::cout << "[SAVE] VisualTransformer param " << i << " shape: [";
+          //for (int s : param.shape)
+          //  std::cout << s << " ";
+          //std::cout << "], size: " << p_size << "\n";
           out.write(reinterpret_cast<const char *>(&p_dim), sizeof(int));
           out.write(reinterpret_cast<const char *>(param.shape.data()), p_dim * sizeof(int));
           out.write(reinterpret_cast<const char *>(&p_size), sizeof(int));
@@ -360,7 +360,7 @@ public:
     // DenseLayer
     std::string fc_type = fc->get_type();
     int fc_type_len = fc_type.size();
-    std::cout << "[SAVE] DenseLayer type: " << fc_type << ", length: " << fc_type_len << "\n";
+    //std::cout << "[SAVE] DenseLayer type: " << fc_type << ", length: " << fc_type_len << "\n";
     out.write(reinterpret_cast<const char *>(&fc_type_len), sizeof(int));
     out.write(fc_type.c_str(), fc_type_len);
     if (fc->has_weights())
@@ -369,20 +369,20 @@ public:
       fc->get_parameters(weights, bias);
       int w_dim = weights.shape.size();
       int w_size = weights.data.size();
-      std::cout << "[SAVE] DenseLayer weights shape: [";
-      for (int s : weights.shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << w_size << "\n";
+      //std::cout << "[SAVE] DenseLayer weights shape: [";
+     // for (int s : weights.shape)
+      //  std::cout << s << " ";
+     // std::cout << "], size: " << w_size << "\n";
       out.write(reinterpret_cast<const char *>(&w_dim), sizeof(int));
       out.write(reinterpret_cast<const char *>(weights.shape.data()), w_dim * sizeof(int));
       out.write(reinterpret_cast<const char *>(&w_size), sizeof(int));
       out.write(reinterpret_cast<const char *>(weights.data.data()), w_size * sizeof(float));
       int b_dim = bias.shape.size();
       int b_size = bias.data.size();
-      std::cout << "[SAVE] DenseLayer bias shape: [";
-      for (int s : bias.shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << b_size << "\n";
+      //std::cout << "[SAVE] DenseLayer bias shape: [";
+      //for (int s : bias.shape)
+      //  std::cout << s << " ";
+      //std::cout << "], size: " << b_size << "\n";
       out.write(reinterpret_cast<const char *>(&b_dim), sizeof(int));
       out.write(reinterpret_cast<const char *>(bias.shape.data()), b_dim * sizeof(int));
       out.write(reinterpret_cast<const char *>(&b_size), sizeof(int));
@@ -390,7 +390,7 @@ public:
     }
 
     out.close();
-    std::cout << "[SAVE] Model saved to " << filename << "\n";
+    //std::cout << "[SAVE] Model saved to " << filename << "\n";
   }
 
   void load(const std::string &filename)
@@ -422,10 +422,10 @@ public:
       in.read(reinterpret_cast<char *>(&w_size), sizeof(int));
       std::vector<float> w_data(w_size);
       in.read(reinterpret_cast<char *>(w_data.data()), w_size * sizeof(float));
-      std::cout << "[LOAD] Conv2DLayer weights shape: [";
-      for (int s : w_shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << w_size << "\n";
+      ///std::cout << "[LOAD] Conv2DLayer weights shape: [";
+      //for (int s : w_shape)
+      //  std::cout << s << " ";
+      //std::cout << "], size: " << w_size << "\n";
       int b_dim, b_size;
       in.read(reinterpret_cast<char *>(&b_dim), sizeof(int));
       std::vector<int> b_shape(b_dim);
@@ -433,10 +433,10 @@ public:
       in.read(reinterpret_cast<char *>(&b_size), sizeof(int));
       std::vector<float> b_data(b_size);
       in.read(reinterpret_cast<char *>(b_data.data()), b_size * sizeof(float));
-      std::cout << "[LOAD] Conv2DLayer bias shape: [";
-      for (int s : b_shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << b_size << "\n";
+      //std::cout << "[LOAD] Conv2DLayer bias shape: [";
+      //for (int s : b_shape)
+       // std::cout << s << " ";
+      //std::cout << "], size: " << b_size << "\n";
 
       // Verificación de formas
       Tensor expected_weights, expected_bias;
@@ -457,7 +457,7 @@ public:
     in.read(reinterpret_cast<char *>(&bn_type_len), sizeof(int));
     std::string bn_type(bn_type_len, ' ');
     in.read(&bn_type[0], bn_type_len);
-    std::cout << "[LOAD] BatchNorm2DLayer type: " << bn_type << ", length: " << bn_type_len << "\n";
+    //std::cout << "[LOAD] BatchNorm2DLayer type: " << bn_type << ", length: " << bn_type_len << "\n";
     if (bn_type != bn->get_type())
       throw std::runtime_error("Tipo de capa BatchNorm2D no coincide");
     if (bn->has_weights())
@@ -472,14 +472,14 @@ public:
       in.read(reinterpret_cast<char *>(&vt_type_len), sizeof(int));
       std::string vt_type(vt_type_len, ' ');
       in.read(&vt_type[0], vt_type_len);
-      std::cout << "[LOAD] VisualTransformer type: " << vt_type << ", length: " << vt_type_len << "\n";
+      //std::cout << "[LOAD] VisualTransformer type: " << vt_type << ", length: " << vt_type_len << "\n";
       if (vt_type != vt->get_type())
         throw std::runtime_error("Tipo de capa VisualTransformer no coincide");
       if (vt->has_weights())
       {
         int num_params;
         in.read(reinterpret_cast<char *>(&num_params), sizeof(int));
-        std::cout << "[LOAD] VisualTransformer num_params: " << num_params << "\n";
+        //std::cout << "[LOAD] VisualTransformer num_params: " << num_params << "\n";
         std::vector<Tensor> vt_params(num_params);
         for (int i = 0; i < num_params; ++i)
         {
@@ -490,10 +490,10 @@ public:
           in.read(reinterpret_cast<char *>(&p_size), sizeof(int));
           std::vector<float> p_data(p_size);
           in.read(reinterpret_cast<char *>(p_data.data()), p_size * sizeof(float));
-          std::cout << "[LOAD] VisualTransformer param " << i << " shape: [";
-          for (int s : p_shape)
-            std::cout << s << " ";
-          std::cout << "], size: " << p_size << "\n";
+          //std::cout << "[LOAD] VisualTransformer param " << i << " shape: [";
+          //for (int s : p_shape)
+          //  std::cout << s << " ";
+          //std::cout << "], size: " << p_size << "\n";
           vt_params[i].shape = p_shape;
           vt_params[i].data = p_data;
         }
@@ -518,10 +518,10 @@ public:
       in.read(reinterpret_cast<char *>(&w_size), sizeof(int));
       std::vector<float> w_data(w_size);
       in.read(reinterpret_cast<char *>(w_data.data()), w_size * sizeof(float));
-      std::cout << "[LOAD] DenseLayer weights shape: [";
-      for (int s : w_shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << w_size << "\n";
+      //std::cout << "[LOAD] DenseLayer weights shape: [";
+      //for (int s : w_shape)
+      //  std::cout << s << " ";
+      //std::cout << "], size: " << w_size << "\n";
       int b_dim, b_size;
       in.read(reinterpret_cast<char *>(&b_dim), sizeof(int));
       std::vector<int> b_shape(b_dim);
@@ -529,10 +529,10 @@ public:
       in.read(reinterpret_cast<char *>(&b_size), sizeof(int));
       std::vector<float> b_data(b_size);
       in.read(reinterpret_cast<char *>(b_data.data()), b_size * sizeof(float));
-      std::cout << "[LOAD] DenseLayer bias shape: [";
-      for (int s : b_shape)
-        std::cout << s << " ";
-      std::cout << "], size: " << b_size << "\n";
+      //std::cout << "[LOAD] DenseLayer bias shape: [";
+      //for (int s : b_shape)
+      //  std::cout << s << " ";
+      //std::cout << "], size: " << b_size << "\n";
       Tensor w_tensor, b_tensor;
       w_tensor.shape = w_shape;
       w_tensor.data = w_data;
@@ -542,7 +542,7 @@ public:
     }
 
     in.close();
-    std::cout << "[LOAD] Model loaded from " << filename << "\n";
+    //std::cout << "[LOAD] Model loaded from " << filename << "\n";
   }
 
   ~VTCNN()

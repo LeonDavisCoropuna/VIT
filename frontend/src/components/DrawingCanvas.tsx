@@ -16,7 +16,7 @@ const DrawingCanvas = forwardRef<CanvasRef>((_, ref) => {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
-        ctx.lineWidth = 32;
+        ctx.lineWidth = 40;
         ctx.lineCap = 'round';
         ctx.strokeStyle = '#000';
         setContext(ctx);
@@ -92,7 +92,7 @@ const DrawingCanvas = forwardRef<CanvasRef>((_, ref) => {
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <div className="border-2 border-gray-300 rounded-lg p-2 bg-white">
+      <div className="border-4 border-gray-500 rounded-lg bg-white">
         <canvas
           ref={canvasRef}
           className="cursor-crosshair touch-none"

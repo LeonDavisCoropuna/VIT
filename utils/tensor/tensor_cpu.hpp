@@ -329,7 +329,7 @@ public:
     int stride = 1;
     int dims = shape.size();
 
-   // assert(indices.size() == dims);
+    // assert(indices.size() == dims);
 
     auto idx_it = indices.end();
     auto shape_it = shape.end();
@@ -1173,15 +1173,17 @@ public:
   }
 
   // Matriz de Confusión
-  static std::vector<std::vector<int>> confusion_matrix(const std::vector<int> &y_true, const std::vector<int> &y_pred, int num_classes)
+  static std::vector<std::vector<int>> confusion_matrix(
+      const std::vector<int> &true_labels,
+      const std::vector<int> &pred_labels,
+      int num_classes)
   {
     std::vector<std::vector<int>> matrix(num_classes, std::vector<int>(num_classes, 0));
-    for (size_t i = 0; i < y_true.size(); ++i)
+    for (size_t i = 0; i < true_labels.size(); ++i)
     {
-      int true_label = y_true[i];
-      int pred_label = y_pred[i];
-      if (true_label >= 0 && true_label < num_classes &&
-          pred_label >= 0 && pred_label < num_classes)
+      int true_label = true_labels[i];
+      int pred_label = pred_labels[i];
+      if (true_label >= 0 && true_label < num_classes && pred_label >= 0 && pred_label < num_classes)
       {
         matrix[true_label][pred_label]++;
       }
@@ -1189,98 +1191,127 @@ public:
     return matrix;
   }
 
-  static std::pair<float, float> precision_recall(const std::vector<int> &y_true, const std::vector<int> &y_pred, int num_classes)
+  static std::tuple<float, float, std::vector<float>, std::vector<float>> precision_recall(
+      const std::vector<int> &true_labels,
+      const std::vector<int> &pred_labels,
+      int num_classes)
   {
-    std::vector<int> TP(num_classes, 0), FP(num_classes, 0), FN(num_classes, 0);
-    for (size_t i = 0; i < y_true.size(); ++i)
+    auto cm = confusion_matrix(true_labels, pred_labels, num_classes);
+    std::vector<float> precisions(num_classes, 0.0f);
+    std::vector<float> recalls(num_classes, 0.0f);
+    float macro_precision = 0.0f;
+    float macro_recall = 0.0f;
+    int valid_classes = 0;
+
+    for (int i = 0; i < num_classes; ++i)
     {
-      int t = y_true[i], p = y_pred[i];
-      if (t == p)
-        TP[t]++;
-      else
+      int true_positives = cm[i][i];
+      int predicted_positives = 0; // Sum of column i
+      int actual_positives = 0;    // Sum of row i
+      for (int j = 0; j < num_classes; ++j)
       {
-        FP[p]++;
-        FN[t]++;
+        predicted_positives += cm[j][i];
+        actual_positives += cm[i][j];
+      }
+
+      if (predicted_positives > 0)
+      {
+        precisions[i] = static_cast<float>(true_positives) / predicted_positives;
+      }
+      if (actual_positives > 0)
+      {
+        recalls[i] = static_cast<float>(true_positives) / actual_positives;
+      }
+
+      if (actual_positives > 0)
+      { // Only count classes with instances
+        macro_precision += precisions[i];
+        macro_recall += recalls[i];
+        valid_classes++;
       }
     }
 
-    float precision_sum = 0.0f, recall_sum = 0.0f;
-    for (int c = 0; c < num_classes; ++c)
-    {
-      float prec = TP[c] + FP[c] > 0 ? (float)TP[c] / (TP[c] + FP[c]) : 0.0f;
-      float rec = TP[c] + FN[c] > 0 ? (float)TP[c] / (TP[c] + FN[c]) : 0.0f;
-      precision_sum += prec;
-      recall_sum += rec;
-    }
-
-    return {
-        precision_sum / num_classes,
-        recall_sum / num_classes};
+    macro_precision = valid_classes > 0 ? macro_precision / valid_classes : 0.0f;
+    macro_recall = valid_classes > 0 ? macro_recall / valid_classes : 0.0f;
+    return {macro_precision, macro_recall, precisions, recalls};
   }
 
-  static std::pair<float, float> f1_score(const std::vector<int> &y_true, const std::vector<int> &y_pred, int num_classes)
+  // Compute F1 score (macro and weighted)
+  static std::tuple<float, float, std::vector<float>> f1_score(
+      const std::vector<int> &true_labels,
+      const std::vector<int> &pred_labels,
+      int num_classes)
   {
-    std::vector<int> TP(num_classes, 0), FP(num_classes, 0), FN(num_classes, 0), support(num_classes, 0);
-    for (size_t i = 0; i < y_true.size(); ++i)
+    auto cm = confusion_matrix(true_labels, pred_labels, num_classes);
+    std::vector<float> precisions(num_classes, 0.0f);
+    std::vector<float> recalls(num_classes, 0.0f);
+    std::vector<float> f1_scores(num_classes, 0.0f);
+    float macro_f1 = 0.0f;
+    float weighted_f1 = 0.0f;
+    int total_instances = 0;
+    int valid_classes = 0;
+
+    for (int i = 0; i < num_classes; ++i)
     {
-      int t = y_true[i], p = y_pred[i];
-      support[t]++;
-      if (t == p)
-        TP[t]++;
-      else
+      int true_positives = cm[i][i];
+      int predicted_positives = 0; // Sum of column i
+      int actual_positives = 0;    // Sum of row i
+      for (int j = 0; j < num_classes; ++j)
       {
-        FP[p]++;
-        FN[t]++;
+        predicted_positives += cm[j][i];
+        actual_positives += cm[i][j];
+      }
+
+      if (predicted_positives > 0)
+      {
+        precisions[i] = static_cast<float>(true_positives) / predicted_positives;
+      }
+      if (actual_positives > 0)
+      {
+        recalls[i] = static_cast<float>(true_positives) / actual_positives;
+      }
+      if (precisions[i] + recalls[i] > 0)
+      {
+        f1_scores[i] = 2.0f * (precisions[i] * recalls[i]) / (precisions[i] + recalls[i]);
+      }
+
+      if (actual_positives > 0)
+      {
+        macro_f1 += f1_scores[i];
+        weighted_f1 += f1_scores[i] * actual_positives;
+        total_instances += actual_positives;
+        valid_classes++;
       }
     }
 
-    float f1_macro = 0.0f;
-    float f1_weighted = 0.0f;
-    int total_support = y_true.size();
-
-    for (int c = 0; c < num_classes; ++c)
-    {
-      float prec = TP[c] + FP[c] > 0 ? (float)TP[c] / (TP[c] + FP[c]) : 0.0f;
-      float rec = TP[c] + FN[c] > 0 ? (float)TP[c] / (TP[c] + FN[c]) : 0.0f;
-      float f1 = (prec + rec) > 0 ? 2.0f * prec * rec / (prec + rec) : 0.0f;
-
-      f1_macro += f1;
-      f1_weighted += f1 * support[c];
-    }
-
-    return {
-        f1_macro / num_classes,
-        f1_weighted / total_support};
+    macro_f1 = valid_classes > 0 ? macro_f1 / valid_classes : 0.0f;
+    weighted_f1 = total_instances > 0 ? weighted_f1 / total_instances : 0.0f;
+    return {macro_f1, weighted_f1, f1_scores};
   }
 
-  // Supone un Tensor 2D: [batch_size, num_classes]
-  std::vector<int> argmax_batch() const
+  // Asume que el tensor tiene forma [B, C]
+  // Compute argmax for each batch (predicted labels)
+  static std::vector<int> argmax_batch(const Tensor &preds)
   {
-    std::vector<int> result;
-    for (int i = 0; i < shape[0]; ++i)
+    std::vector<int> result(preds.shape[0]);
+    int num_classes = preds.shape[1];
+    for (int i = 0; i < preds.shape[0]; ++i)
     {
-      float max_val = -std::numeric_limits<float>::infinity();
-      int max_idx = -1;
-      for (int j = 0; j < shape[1]; ++j)
-      {
-        float val = at({i, j});
-        if (val > max_val)
-        {
-          max_val = val;
-          max_idx = j;
-        }
-      }
-      result.push_back(max_idx);
+      result[i] = std::distance(
+          preds.data.begin() + i * num_classes,
+          std::max_element(
+              preds.data.begin() + i * num_classes,
+              preds.data.begin() + (i + 1) * num_classes));
     }
     return result;
   }
 
   std::vector<int> to_vector() const
   {
-    std::vector<int> result;
-    for (int i = 0; i < shape[0]; ++i)
+    std::vector<int> result(data.size());
+    for (size_t i = 0; i < data.size(); ++i)
     {
-      result.push_back(static_cast<int>(at({i})));
+      result[i] = static_cast<int>(data[i]);
     }
     return result;
   }
