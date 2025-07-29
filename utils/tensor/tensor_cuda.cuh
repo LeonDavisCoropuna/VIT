@@ -10,7 +10,7 @@ class Tensor
 {
 public:
   std::vector<int> shape;
-  float *data;
+  std::vector<float> data;
   size_t size;
 
   static std::mt19937 global_gen;

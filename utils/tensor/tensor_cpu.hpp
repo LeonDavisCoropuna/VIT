@@ -36,6 +36,30 @@ public:
     data.resize(total, 0.0f);
   }
 
+  void serialize(std::ostream &out) const
+  {
+    int dim = shape.size();
+    out.write(reinterpret_cast<const char *>(&dim), sizeof(int));
+    out.write(reinterpret_cast<const char *>(shape.data()), sizeof(int) * dim);
+
+    size_t data_size = data.size();
+    out.write(reinterpret_cast<const char *>(&data_size), sizeof(size_t));
+    out.write(reinterpret_cast<const char *>(data.data()), sizeof(float) * data_size);
+  }
+
+  void deserialize(std::istream &in)
+  {
+    int dim;
+    in.read(reinterpret_cast<char *>(&dim), sizeof(int));
+    shape.resize(dim);
+    in.read(reinterpret_cast<char *>(shape.data()), sizeof(int) * dim);
+
+    size_t data_size;
+    in.read(reinterpret_cast<char *>(&data_size), sizeof(size_t));
+    data.resize(data_size);
+    in.read(reinterpret_cast<char *>(data.data()), sizeof(float) * data_size);
+  }
+
   // -------------------- Inicialización --------------------
   static Tensor zeros(const std::vector<int> &shape)
   {
@@ -305,7 +329,7 @@ public:
     int stride = 1;
     int dims = shape.size();
 
-    assert(indices.size() == dims);
+    // assert(indices.size() == dims);
 
     auto idx_it = indices.end();
     auto shape_it = shape.end();
@@ -1025,6 +1049,7 @@ public:
   }
   Tensor operator*(const Tensor &other) const
   {
+    // Caso 1: shape igual → multiplicación directa
     assert(shape.size() == other.shape.size());
 
     Tensor result(shape);
@@ -1146,8 +1171,231 @@ public:
 
     return loss / B;
   }
+
+  // Matriz de Confusión
+  static std::vector<std::vector<int>> confusion_matrix(
+      const std::vector<int> &true_labels,
+      const std::vector<int> &pred_labels,
+      int num_classes)
+  {
+    std::vector<std::vector<int>> matrix(num_classes, std::vector<int>(num_classes, 0));
+    for (size_t i = 0; i < true_labels.size(); ++i)
+    {
+      int true_label = true_labels[i];
+      int pred_label = pred_labels[i];
+      if (true_label >= 0 && true_label < num_classes && pred_label >= 0 && pred_label < num_classes)
+      {
+        matrix[true_label][pred_label]++;
+      }
+    }
+    return matrix;
+  }
+
+  static std::tuple<float, float, std::vector<float>, std::vector<float>> precision_recall(
+      const std::vector<int> &true_labels,
+      const std::vector<int> &pred_labels,
+      int num_classes)
+  {
+    auto cm = confusion_matrix(true_labels, pred_labels, num_classes);
+    std::vector<float> precisions(num_classes, 0.0f);
+    std::vector<float> recalls(num_classes, 0.0f);
+    float macro_precision = 0.0f;
+    float macro_recall = 0.0f;
+    int valid_classes = 0;
+
+    for (int i = 0; i < num_classes; ++i)
+    {
+      int true_positives = cm[i][i];
+      int predicted_positives = 0; // Sum of column i
+      int actual_positives = 0;    // Sum of row i
+      for (int j = 0; j < num_classes; ++j)
+      {
+        predicted_positives += cm[j][i];
+        actual_positives += cm[i][j];
+      }
+
+      if (predicted_positives > 0)
+      {
+        precisions[i] = static_cast<float>(true_positives) / predicted_positives;
+      }
+      if (actual_positives > 0)
+      {
+        recalls[i] = static_cast<float>(true_positives) / actual_positives;
+      }
+
+      if (actual_positives > 0)
+      { // Only count classes with instances
+        macro_precision += precisions[i];
+        macro_recall += recalls[i];
+        valid_classes++;
+      }
+    }
+
+    macro_precision = valid_classes > 0 ? macro_precision / valid_classes : 0.0f;
+    macro_recall = valid_classes > 0 ? macro_recall / valid_classes : 0.0f;
+    return {macro_precision, macro_recall, precisions, recalls};
+  }
+
+  // Compute F1 score (macro and weighted)
+  static std::tuple<float, float, std::vector<float>> f1_score(
+      const std::vector<int> &true_labels,
+      const std::vector<int> &pred_labels,
+      int num_classes)
+  {
+    auto cm = confusion_matrix(true_labels, pred_labels, num_classes);
+    std::vector<float> precisions(num_classes, 0.0f);
+    std::vector<float> recalls(num_classes, 0.0f);
+    std::vector<float> f1_scores(num_classes, 0.0f);
+    float macro_f1 = 0.0f;
+    float weighted_f1 = 0.0f;
+    int total_instances = 0;
+    int valid_classes = 0;
+
+    for (int i = 0; i < num_classes; ++i)
+    {
+      int true_positives = cm[i][i];
+      int predicted_positives = 0; // Sum of column i
+      int actual_positives = 0;    // Sum of row i
+      for (int j = 0; j < num_classes; ++j)
+      {
+        predicted_positives += cm[j][i];
+        actual_positives += cm[i][j];
+      }
+
+      if (predicted_positives > 0)
+      {
+        precisions[i] = static_cast<float>(true_positives) / predicted_positives;
+      }
+      if (actual_positives > 0)
+      {
+        recalls[i] = static_cast<float>(true_positives) / actual_positives;
+      }
+      if (precisions[i] + recalls[i] > 0)
+      {
+        f1_scores[i] = 2.0f * (precisions[i] * recalls[i]) / (precisions[i] + recalls[i]);
+      }
+
+      if (actual_positives > 0)
+      {
+        macro_f1 += f1_scores[i];
+        weighted_f1 += f1_scores[i] * actual_positives;
+        total_instances += actual_positives;
+        valid_classes++;
+      }
+    }
+
+    macro_f1 = valid_classes > 0 ? macro_f1 / valid_classes : 0.0f;
+    weighted_f1 = total_instances > 0 ? weighted_f1 / total_instances : 0.0f;
+    return {macro_f1, weighted_f1, f1_scores};
+  }
+
+  // Asume que el tensor tiene forma [B, C]
+  // Compute argmax for each batch (predicted labels)
+  static std::vector<int> argmax_batch(const Tensor &preds)
+  {
+    std::vector<int> result(preds.shape[0]);
+    int num_classes = preds.shape[1];
+    for (int i = 0; i < preds.shape[0]; ++i)
+    {
+      result[i] = std::distance(
+          preds.data.begin() + i * num_classes,
+          std::max_element(
+              preds.data.begin() + i * num_classes,
+              preds.data.begin() + (i + 1) * num_classes));
+    }
+    return result;
+  }
+
+  std::vector<int> to_vector() const
+  {
+    std::vector<int> result(data.size());
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+      result[i] = static_cast<int>(data[i]);
+    }
+    return result;
+  }
+
+  // Precision, Recall y F1-score por macro-promedio
+  static std::tuple<float, float, float> compute_precision_recall_f1(const Tensor &preds, const Tensor &targets, int num_classes)
+  {
+    std::vector<int> TP(num_classes, 0), FP(num_classes, 0), FN(num_classes, 0);
+    int total = preds.shape[0];
+
+    for (int i = 0; i < total; ++i)
+    {
+      int pred_label = std::distance(preds.data.begin() + i * num_classes,
+                                     std::max_element(preds.data.begin() + i * num_classes,
+                                                      preds.data.begin() + (i + 1) * num_classes));
+      int true_label = static_cast<int>(targets.data[i]);
+
+      if (pred_label == true_label)
+        TP[true_label]++;
+      else
+      {
+        FP[pred_label]++;
+        FN[true_label]++;
+      }
+    }
+
+    float precision_sum = 0.0f, recall_sum = 0.0f, f1_sum = 0.0f;
+    for (int c = 0; c < num_classes; ++c)
+    {
+      float precision = TP[c] + FP[c] > 0 ? float(TP[c]) / (TP[c] + FP[c]) : 0.0f;
+      float recall = TP[c] + FN[c] > 0 ? float(TP[c]) / (TP[c] + FN[c]) : 0.0f;
+      float f1 = precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0.0f;
+
+      precision_sum += precision;
+      recall_sum += recall;
+      f1_sum += f1;
+    }
+
+    return {
+        precision_sum / num_classes,
+        recall_sum / num_classes,
+        f1_sum / num_classes};
+  }
+
   bool empty() const
   {
     return data.empty();
   }
+  std::string printsummary(std::string name = "") const
+  {
+    std::ostringstream oss;
+    if (!name.empty())
+      oss << "Tensor: " << name << "\n";
+    else
+      oss << "Tensor:\n";
+    oss << "Tensor data: " << data.size() << ", shape size: " << shape.size() << ", shape: [";
+    for (size_t i = 0; i < shape.size(); ++i)
+    {
+      oss << shape[i];
+      if (i < shape.size() - 1)
+        oss << ", ";
+    }
+    oss << "]";
+    return oss.str();
+  }
 };
+
+void print_tensor(const Tensor &t, const std::string &name = "Tensor", int max_elems = 20)
+{
+  std::cout << "[DEBUG] " << name << " | shape: (";
+  for (size_t i = 0; i < t.shape.size(); ++i)
+  {
+    std::cout << t.shape[i];
+    if (i != t.shape.size() - 1)
+      std::cout << ", ";
+  }
+
+  int total_size = t.data.size();
+  std::cout << ") | size: " << total_size << "\n";
+
+  std::cout << "[DEBUG] " << name << " values (first " << max_elems << "): ";
+  for (int i = 0; i < std::min(max_elems, total_size); ++i)
+  {
+    std::cout << t.data[i] << " ";
+  }
+  std::cout << "\n";
+}

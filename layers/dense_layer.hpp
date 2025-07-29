@@ -3,48 +3,83 @@
 
 class DenseLayer : public Layer
 {
-private:
+public:
   Tensor weights;
-  Tensor biases;
+  Tensor bias;
   Tensor input;
   Tensor output;
-  Tensor gradWeights;
-  Tensor gradBiases;
-  Tensor inputDeltas;
-  Tensor outputDeltas;
-  bool useBias;
-  bool isTraining;
+  Tensor grad_weights;
+  Tensor grad_bias;
+  Tensor input_deltas;
+  Tensor output_deltas;
+  bool use_bias;
+  bool training;
 
-public:
-  DenseLayer(int inFeatures, int outFeatures, bool useBias = true)
-      : useBias(useBias), isTraining(true)
+  DenseLayer(int in_features, int out_features, bool use_bias = true)
+      : use_bias(use_bias), training(true)
   {
     // Xavier initialization
-    float limit = std::sqrt(6.0f / (inFeatures + outFeatures));
-    weights = Tensor::rand_uniform({inFeatures, outFeatures}, -limit, limit);
-    gradWeights = Tensor::zeros({inFeatures, outFeatures});
+    float limit = std::sqrt(6.0f / (in_features + out_features));
+    weights = Tensor::rand_uniform({in_features, out_features}, -limit, limit);
+    grad_weights = Tensor::zeros({in_features, out_features});
 
-    if (useBias)
+    if (use_bias)
     {
-      biases = Tensor::zeros({outFeatures});
-      gradBiases = Tensor::zeros({outFeatures});
+      bias = Tensor::zeros({out_features});
+      grad_bias = Tensor::zeros({out_features});
+    }
+  }
+
+  void get_parameters(Tensor &out_weights, Tensor &out_bias) const
+  {
+    out_weights.shape = weights.shape;
+    out_weights.data = weights.data;
+
+    if (use_bias)
+    {
+      out_bias.shape = bias.shape;
+      out_bias.data = bias.data;
+    }
+    else
+    {
+      out_bias.shape = {};
+      out_bias.data.clear();
+    }
+  }
+
+  void set_parameters(const Tensor &new_weights, const Tensor &new_bias)
+  {
+    weights.shape = new_weights.shape;
+    weights.data = new_weights.data;
+
+    if (use_bias && !new_bias.data.empty())
+    {
+      bias.shape = new_bias.shape;
+      bias.data = new_bias.data;
+    }
+    else
+    {
+      bias.shape = {};
+      bias.data.clear();
     }
   }
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
-    input = inputs[0];               // (N, inFeatures)
-    output = input.matmul(weights);  // (N, outFeatures)
-    if (useBias)
-      output = output + biases.reshape({1, -1}); // broadcasting
+    input = inputs[0];              // (N, in_features)
+    output = input.matmul(weights); // (N, out_features)
 
-    return {outputDeltas = output};
+    if (use_bias)
+      output = output + bias.reshape({1, -1}); // broadcasting
+
+    output_deltas = output;
+    return {output};
   }
 
   void backward(const Tensor *targets = nullptr,
                 const Layer *next_layer = nullptr) override
   {
-    Tensor delta;
+    Tensor delta; // (N, out_features)
     if (targets)
     {
       delta = *targets;
@@ -54,37 +89,38 @@ public:
       delta = next_layer->get_input_deltas();
     }
 
-    Tensor inputTransposed = input.transpose({1, 0});     // (inFeatures, N)
-    gradWeights = inputTransposed.matmul(delta);          // (inFeatures, outFeatures)
+    Tensor input_T = input.transpose({1, 0}); // (in_features, N)
+    grad_weights = input_T.matmul(delta);     // (in_features, out_features)
 
-    if (useBias)
-      gradBiases = delta.sum(0); // sum across batch
+    if (use_bias)
+      grad_bias = delta.sum(0); // sum across batch (eje 0 = filas)
 
-    Tensor weightsTransposed = weights.transpose({1, 0}); // (outFeatures, inFeatures)
-    inputDeltas = delta.matmul(weightsTransposed);        // (N, inFeatures)
+    Tensor weights_T = weights.transpose({1, 0}); // (out_features, in_features)
+    input_deltas = delta.matmul(weights_T);       // (N, in_features)
   }
 
-  void update_weights(float batchSize) override
+  void update_weights(float batch_size) override
   {
     if (optimizer)
     {
-      gradWeights = gradWeights / batchSize;
-      gradBiases = gradBiases / batchSize;
-      optimizer->update(weights, gradWeights,
-                        biases, gradBiases);
+      grad_weights = grad_weights / batch_size;
+      grad_bias = grad_bias / batch_size;
+
+      optimizer->update(weights, grad_weights,
+                        bias, grad_bias);
     }
   }
 
   void zero_grad() override
   {
-    gradWeights.fill(0.0f);
-    if (useBias)
-      gradBiases.fill(0.0f);
+    grad_weights.fill(0.0f);
+    if (use_bias)
+      grad_bias.fill(0.0f);
   }
 
-  void set_training(bool training) override
+  void set_training(bool is_training) override
   {
-    isTraining = training;
+    training = is_training;
   }
 
   const Tensor &get_output() const
@@ -94,7 +130,7 @@ public:
 
   const Tensor &get_input_deltas() const override
   {
-    return inputDeltas;
+    return input_deltas;
   }
 
   const Tensor &get_last_input() const
@@ -102,6 +138,11 @@ public:
     return input;
   }
 
+  std::string get_type() const override
+  {
+    return "Dense";
+  }
+  
   bool has_weights() const override
   {
     return true;

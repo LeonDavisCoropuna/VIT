@@ -1,0 +1,11 @@
+Configurando construcción (Modo: CPU)
+🔧 Ejecutando CMake...
+-- OpenMP found: -fopenmp
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/lupo/Music/VIT/build
+🛠️  Compilando proyecto...
+[ 50%] Building CXX object CMakeFiles/main.dir/main.cpp.o
+[100%] Linking CXX executable main
+[100%] Built target main
+🚀 Ejecutando programa...

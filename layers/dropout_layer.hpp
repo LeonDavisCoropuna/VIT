@@ -1,36 +1,37 @@
 #pragma once
 #include "layer.hpp"
+#include <random>
 
 class DropoutLayer : public Layer
 {
 private:
-  float dropoutProb;
-  Tensor dropoutMask;
-  Tensor inputDeltas;
+  float dropout_prob;
+  Tensor mask;
+  Tensor input_deltas;
 
 public:
-  DropoutLayer(float prob = 0.5f) : dropoutProb(prob) {}
+  DropoutLayer(float prob = 0.5f) : dropout_prob(prob) {}
 
   std::vector<Tensor> forward(const std::vector<Tensor> &inputs) override
   {
-    Tensor input = inputs[0];
+    Tensor x = inputs[0];
 
     if (is_training)
     {
-      dropoutMask = Tensor::bernoulli(input.shape, 1.0f - dropoutProb); // 1 con prob 1-p
-      return {(input * dropoutMask) / (1.0f - dropoutProb)};
+      mask = Tensor::bernoulli(x.shape, 1.0f - dropout_prob); // 1 con prob 1-p
+      return {(x * mask) / (1.0f - dropout_prob)};
     }
     else
     {
-      return {input};
+      return {x};
     }
   }
 
   void backward(const Tensor *targets = nullptr,
                 const Layer *next_layer = nullptr) override
   {
-    const Tensor &nextDelta = next_layer->get_input_deltas();
-    inputDeltas = nextDelta * dropoutMask; // Solo pasan las que estaban activas
+    const Tensor &next_delta = next_layer->get_input_deltas();
+    input_deltas = next_delta * mask; // Solo pasan las que estaban activas
   }
 
   void update_weights(float) override {}
@@ -43,6 +44,8 @@ public:
 
   const Tensor &get_input_deltas() const override
   {
-    return inputDeltas;
+    return input_deltas;
   }
+  std::string get_type() const override { return "Dropout"; }
+
 };

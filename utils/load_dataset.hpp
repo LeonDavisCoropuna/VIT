@@ -7,6 +7,8 @@
 #include <iostream>
 #include "tensor.hpp"
 #include "fstream"
+#include "load_image_stb.hpp"
+
 struct Dataset
 {
   std::vector<std::vector<float>> images; // CPU-only
@@ -93,6 +95,7 @@ Dataset load_dataset(const std::string &image_path, const std::string &label_pat
   return {images, labels};
 }
 
+
 class DataLoader
 {
 private:
@@ -160,3 +163,47 @@ public:
     return (images.size() + batch_size - 1) / batch_size;
   }
 };
+
+Dataset load_custom_images_from_folder(const std::string &folder_path)
+{
+    Dataset dataset;
+    std::vector<fs::directory_entry> files;
+
+    // Recolectar archivos válidos
+    for (const auto &entry : fs::directory_iterator(folder_path))
+    {
+        if (entry.is_regular_file())
+        {
+            std::string ext = entry.path().extension().string();
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg")
+            {
+                files.push_back(entry);
+            }
+        }
+    }
+
+    // Ordenar alfabéticamente por nombre
+    std::sort(files.begin(), files.end(), [](const fs::directory_entry &a, const fs::directory_entry &b) {
+        return a.path().filename().string() < b.path().filename().string();
+    });
+
+    // Cargar imágenes en orden
+    for (size_t i = 0; i < files.size(); ++i)
+    {
+        const std::string path = files[i].path().string();
+        try
+        {
+            auto img = load_image_as_vector(path);
+            dataset.images.push_back(img);
+            dataset.labels.push_back(0); // dummy label
+
+           
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Error al cargar " << path << ": " << e.what() << "\n";
+        }
+    }
+
+    return dataset;
+}

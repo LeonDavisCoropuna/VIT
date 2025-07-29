@@ -255,6 +255,130 @@ public:
 
   bool has_weights() const override { return true; }
 
+  std::string get_type() const override
+  {
+    return "ProjectorLayer";
+  }
+
+  std::vector<Tensor> get_parameters() const
+  {
+    std::vector<Tensor> params;
+    Tensor weights, bias;
+
+    // linear1: weights only (no bias)
+    linear1->get_parameters(weights, bias);
+    params.push_back(weights);
+
+    // linear2: weights only (no bias)
+    linear2->get_parameters(weights, bias);
+    params.push_back(weights);
+
+    // linear3: weights and bias
+    linear3->get_parameters(weights, bias);
+    params.push_back(weights);
+    params.push_back(bias);
+
+    // norm: gamma and beta
+    Tensor gamma, beta;
+    norm->get_parameters(gamma, beta);
+    params.push_back(gamma);
+    params.push_back(beta);
+
+    // downsample: weights and bias (if present)
+    if (downsample)
+    {
+      downsample->get_parameters(weights, bias);
+      params.push_back(weights);
+      params.push_back(bias);
+    }
+
+    return params;
+  }
+
+  void set_parameters(const std::vector<Tensor> &new_params)
+  {
+    size_t expected_params = downsample ? 8 : 6; // 3 (linear1, linear2, linear3 weights) + 1 (linear3 bias) + 2 (norm) + 2 (downsample if present)
+    if (new_params.size() != expected_params)
+      throw std::runtime_error("ProjectorLayer: Expected " + std::to_string(expected_params) +
+                               " parameter tensors, got " + std::to_string(new_params.size()));
+
+    size_t param_index = 0;
+    Tensor empty_bias;
+
+    // linear1: weights only
+    linear1->set_parameters(new_params[param_index++], empty_bias);
+
+    // linear2: weights only
+    linear2->set_parameters(new_params[param_index++], empty_bias);
+
+    // linear3: weights and bias
+    linear3->set_parameters(new_params[param_index], new_params[param_index + 1]);
+    param_index += 2;
+
+    // norm: gamma and beta
+    norm->set_parameters(new_params[param_index], new_params[param_index + 1]);
+    param_index += 2;
+
+    // downsample: weights and bias (if present)
+    if (downsample)
+    {
+      downsample->set_parameters(new_params[param_index], new_params[param_index + 1]);
+    }
+  }
+
+  void save(std::ostream &out) const
+  {
+    // Write presence of downsample
+    int has_downsample = downsample ? 1 : 0;
+    out.write(reinterpret_cast<const char *>(&has_downsample), sizeof(int));
+
+    // Save parameters
+    std::vector<Tensor> params = get_parameters();
+    int num_params = params.size();
+    out.write(reinterpret_cast<const char *>(&num_params), sizeof(int));
+    for (const auto &param : params)
+    {
+      int p_dim = param.shape.size();
+      int p_size = param.data.size();
+      out.write(reinterpret_cast<const char *>(&p_dim), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.shape.data()), p_dim * sizeof(int));
+      out.write(reinterpret_cast<const char *>(&p_size), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.data.data()), p_size * sizeof(float));
+    }
+  }
+
+  void load(std::istream &in)
+  {
+    // Read presence of downsample
+    int has_downsample;
+    in.read(reinterpret_cast<char *>(&has_downsample), sizeof(int));
+    if (has_downsample != (downsample ? 1 : 0))
+      throw std::runtime_error("ProjectorLayer: Downsample configuration mismatch");
+
+    // Read parameters
+    int num_params;
+    in.read(reinterpret_cast<char *>(&num_params), sizeof(int));
+    size_t expected_params = downsample ? 8 : 6;
+    if (num_params != static_cast<int>(expected_params))
+      throw std::runtime_error("ProjectorLayer: Expected " + std::to_string(expected_params) +
+                               " parameter tensors, got " + std::to_string(num_params));
+
+    std::vector<Tensor> params(num_params);
+    for (int i = 0; i < num_params; ++i)
+    {
+      int p_dim, p_size;
+      in.read(reinterpret_cast<char *>(&p_dim), sizeof(int));
+      std::vector<int> p_shape(p_dim);
+      in.read(reinterpret_cast<char *>(p_shape.data()), p_dim * sizeof(int));
+      in.read(reinterpret_cast<char *>(&p_size), sizeof(int));
+      std::vector<float> p_data(p_size);
+      in.read(reinterpret_cast<char *>(p_data.data()), p_size * sizeof(float));
+      params[i].shape = p_shape;
+      params[i].data = p_data;
+    }
+    set_parameters(params);
+  }
+
   ~ProjectorLayer()
   {
     delete linear1;

@@ -208,6 +208,72 @@ public:
     linear2->set_training(train);
   }
 
+    std::string get_type() const override
+  {
+    return "FilterTokenizer";
+  }
+
+  std::vector<Tensor> get_parameters() const
+  {
+    std::vector<Tensor> params;
+    Tensor weights1, bias1, weights2, bias2;
+    linear1->get_parameters(weights1, bias1);
+    linear2->get_parameters(weights2, bias2);
+    params.push_back(weights1);
+    params.push_back(bias1);
+    params.push_back(weights2);
+    params.push_back(bias2);
+    return params;
+  }
+
+  void set_parameters(const std::vector<Tensor> &new_params)
+  {
+    if (new_params.size() != 4)
+      throw std::runtime_error("FilterTokenizer: Expected 4 parameter tensors, got " +
+                               std::to_string(new_params.size()));
+    linear1->set_parameters(new_params[0], new_params[1]);
+    linear2->set_parameters(new_params[2], new_params[3]);
+  }
+
+  void save(std::ostream &out) const
+  {
+    std::vector<Tensor> params = get_parameters();
+    int num_params = params.size();
+    out.write(reinterpret_cast<const char *>(&num_params), sizeof(int));
+    for (const auto &param : params)
+    {
+      int p_dim = param.shape.size();
+      int p_size = param.data.size();
+      out.write(reinterpret_cast<const char *>(&p_dim), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.shape.data()), p_dim * sizeof(int));
+      out.write(reinterpret_cast<const char *>(&p_size), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.data.data()), p_size * sizeof(float));
+    }
+  }
+
+  void load(std::istream &in)
+  {
+    int num_params;
+    in.read(reinterpret_cast<char *>(&num_params), sizeof(int));
+    if (num_params != 4)
+      throw std::runtime_error("FilterTokenizer: Expected 4 parameter tensors, got " +
+                               std::to_string(num_params));
+    std::vector<Tensor> params(num_params);
+    for (int i = 0; i < num_params; ++i)
+    {
+      int p_dim, p_size;
+      in.read(reinterpret_cast<char *>(&p_dim), sizeof(int));
+      std::vector<int> p_shape(p_dim);
+      in.read(reinterpret_cast<char *>(p_shape.data()), p_dim * sizeof(int));
+      in.read(reinterpret_cast<char *>(&p_size), sizeof(int));
+      std::vector<float> p_data(p_size);
+      in.read(reinterpret_cast<char *>(p_data.data()), p_size * sizeof(float));
+      params[i].shape = p_shape;
+      params[i].data = p_data;
+    }
+    set_parameters(params);
+  }
+
   ~FilterTokenizer()
   {
     delete linear1;
@@ -312,6 +378,72 @@ public:
     return input_deltas;
   }
 
+   std::string get_type() const override
+  {
+    return "RecurrentTokenizer";
+  }
+
+  std::vector<Tensor> get_parameters() const
+  {
+    std::vector<Tensor> params;
+    Tensor weights1, bias1, weights2, bias2;
+    linear1->get_parameters(weights1, bias1);
+    linear2->get_parameters(weights2, bias2);
+    params.push_back(weights1);
+    params.push_back(bias1);
+    params.push_back(weights2);
+    params.push_back(bias2);
+    return params;
+  }
+
+  void set_parameters(const std::vector<Tensor> &new_params)
+  {
+    if (new_params.size() != 4)
+      throw std::runtime_error("RecurrentTokenizer: Expected 4 parameter tensors, got " +
+                               std::to_string(new_params.size()));
+    linear1->set_parameters(new_params[0], new_params[1]);
+    linear2->set_parameters(new_params[2], new_params[3]);
+  }
+
+  void save(std::ostream &out) const
+  {
+    std::vector<Tensor> params = get_parameters();
+    int num_params = params.size();
+    out.write(reinterpret_cast<const char *>(&num_params), sizeof(int));
+    for (const auto &param : params)
+    {
+      int p_dim = param.shape.size();
+      int p_size = param.data.size();
+      out.write(reinterpret_cast<const char *>(&p_dim), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.shape.data()), p_dim * sizeof(int));
+      out.write(reinterpret_cast<const char *>(&p_size), sizeof(int));
+      out.write(reinterpret_cast<const char *>(param.data.data()), p_size * sizeof(float));
+    }
+  }
+
+  void load(std::istream &in)
+  {
+    int num_params;
+    in.read(reinterpret_cast<char *>(&num_params), sizeof(int));
+    if (num_params != 4)
+      throw std::runtime_error("RecurrentTokenizer: Expected 4 parameter tensors, got " +
+                               std::to_string(num_params));
+    std::vector<Tensor> params(num_params);
+    for (int i = 0; i < num_params; ++i)
+    {
+      int p_dim, p_size;
+      in.read(reinterpret_cast<char *>(&p_dim), sizeof(int));
+      std::vector<int> p_shape(p_dim);
+      in.read(reinterpret_cast<char *>(p_shape.data()), p_dim * sizeof(int));
+      in.read(reinterpret_cast<char *>(&p_size), sizeof(int));
+      std::vector<float> p_data(p_size);
+      in.read(reinterpret_cast<char *>(p_data.data()), p_size * sizeof(float));
+      params[i].shape = p_shape;
+      params[i].data = p_data;
+    }
+    set_parameters(params);
+  }
+  
   ~RecurrentTokenizer()
   {
     delete linear1;
