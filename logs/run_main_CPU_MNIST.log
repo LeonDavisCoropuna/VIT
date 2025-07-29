@@ -1,0 +1,118 @@
+❯ ./run.sh main mnist train 20
+
+🔧 Configuración del entorno (Modo: CPU)
+🔨 Ejecutando CMake...
+-- OpenMP found: -fopenmp
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/lupo/Documents/topicos_ia/VIT/build
+📦 Compilando proyecto...
+[ 50%] Building CXX object CMakeFiles/main.dir/main.cpp.o
+[100%] Linking CXX executable main
+[100%] Built target main
+🚀 Ejecutando programa...
+📊 Datos cargados:
+  - Train: 48000 muestras
+  - Validation: 12000 muestras
+  - Test: 10000 muestras
+🚀 Entrenando modelo por 20 épocas...
+Epoch 1/20
+Train Loss: 0.6787 | Accuracy: 79.7250% | Time: 335.8937 s
+Val Loss: 0.3482 | Accuracy: 89.8417%
+Epoch 2/20
+Train Loss: 0.3359 | Accuracy: 90.0188% | Time: 323.6205 s
+Val Loss: 0.2761 | Accuracy: 92.0750%
+Epoch 3/20
+Train Loss: 0.2750 | Accuracy: 91.9083% | Time: 315.7073 s
+Val Loss: 0.2423 | Accuracy: 93.0333%
+Epoch 4/20
+Train Loss: 0.2374 | Accuracy: 93.1646% | Time: 313.2465 s
+Val Loss: 0.2119 | Accuracy: 93.8500%
+Epoch 5/20
+Train Loss: 0.2100 | Accuracy: 93.9479% | Time: 321.3740 s
+Val Loss: 0.1938 | Accuracy: 94.4333%
+Epoch 6/20
+Train Loss: 0.1880 | Accuracy: 94.6229% | Time: 331.7719 s
+Val Loss: 0.1738 | Accuracy: 95.3000%
+Epoch 7/20
+Train Loss: 0.1709 | Accuracy: 95.0562% | Time: 337.1871 s
+Val Loss: 0.1629 | Accuracy: 95.6667%
+Epoch 8/20
+Train Loss: 0.1568 | Accuracy: 95.5062% | Time: 362.2660 s
+Val Loss: 0.1512 | Accuracy: 96.0083%
+Epoch 9/20
+Train Loss: 0.1457 | Accuracy: 95.8313% | Time: 366.2048 s
+Val Loss: 0.1429 | Accuracy: 96.2500%
+Epoch 10/20
+Train Loss: 0.1350 | Accuracy: 96.1062% | Time: 356.0793 s
+Val Loss: 0.1343 | Accuracy: 96.4333%
+Epoch 11/20
+Train Loss: 0.1277 | Accuracy: 96.3333% | Time: 357.3275 s
+Val Loss: 0.1281 | Accuracy: 96.6083%
+Epoch 12/20
+Train Loss: 0.1204 | Accuracy: 96.5292% | Time: 365.1794 s
+Val Loss: 0.1223 | Accuracy: 96.7750%
+Epoch 13/20
+Train Loss: 0.1145 | Accuracy: 96.7125% | Time: 505.9551 s
+Val Loss: 0.1178 | Accuracy: 96.8500%
+Epoch 14/20
+Train Loss: 0.1089 | Accuracy: 96.8938% | Time: 602.1770 s
+Val Loss: 0.1137 | Accuracy: 96.9750%
+Epoch 15/20
+Train Loss: 0.1042 | Accuracy: 96.9729% | Time: 532.5233 s
+Val Loss: 0.1099 | Accuracy: 97.0750%
+Epoch 16/20
+Train Loss: 0.0996 | Accuracy: 97.1958% | Time: 464.4920 s
+Val Loss: 0.1094 | Accuracy: 96.9333%
+Epoch 17/20
+Train Loss: 0.0964 | Accuracy: 97.2500% | Time: 430.9368 s
+Val Loss: 0.1048 | Accuracy: 97.1000%
+Epoch 18/20
+Train Loss: 0.0926 | Accuracy: 97.3646% | Time: 431.7012 s
+Val Loss: 0.1026 | Accuracy: 97.2333%
+Epoch 19/20
+Train Loss: 0.0890 | Accuracy: 97.5333% | Time: 845.2062 s
+Val Loss: 0.1000 | Accuracy: 97.2250%
+Epoch 20/20
+Train Loss: 0.0866 | Accuracy: 97.5917% | Time: 683.0759 s
+Val Loss: 0.0972 | Accuracy: 97.2833%
+
+=== Evaluación final sobre conjunto de test ===
+[TEST] Final Evaluation — Loss: 0.0921 | Accuracy: 97.3343%
+ - F1 Score (macro):    0.9732
+ - F1 Score (weighted): 0.9733
+ - Precision (macro):   0.9733
+ - Recall (macro):      0.9732
+
+📊 Per-Class Metrics:
+   Class   Precision      Recall    F1 Score
+--------------------------------------------
+       0      0.9682      0.9939      0.9809
+       1      0.9825      0.9912      0.9868
+       2      0.9571      0.9729      0.9649
+       3      0.9714      0.9743      0.9728
+       4      0.9777      0.9837      0.9807
+       5      0.9721      0.9776      0.9748
+       6      0.9925      0.9687      0.9805
+       7      0.9722      0.9533      0.9627
+       8      0.9650      0.9620      0.9635
+       9      0.9747      0.9544      0.9644
+
+🧩 Matriz de Confusión:
+       0   1   2   3   4   5   6   7   8   9
+ 0:  974   0   1   1   0   0   1   1   2   0
+ 1:    01125   2   1   0   1   1   1   4   0
+ 2:    6   41004   4   2   0   1   2   8   1
+ 3:    1   1   7 984   0   6   0   4   5   2
+ 4:    1   0   4   0 966   0   1   1   2   7
+ 5:    3   1   1   6   0 872   3   1   3   2
+ 6:    8   3   3   1   3   9 928   0   3   0
+ 7:    1   6  21   4   4   0   0 980   4   8
+ 8:    7   0   5   6   3   5   0   6 937   5
+ 9:    5   5   1   6  10   4   0  12   3 963
+✅ Modelo guardado como: model_mnist.bin
+
+real	156m58,624s
+user	1911m4,533s
+sys	13m36,302s
+✅ Ejecución completada (Modo: CPU)

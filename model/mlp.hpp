@@ -23,7 +23,7 @@ public:
     layers.push_back(new DenseLayer(128, 64));
     // layers.push_back(new BatchNormLayer1D(64));
     layers.push_back(new ReLULayer());
-    layers.push_back(new DenseLayer(64, 10));
+    layers.push_back(new DenseLayer(64, 8));
     layers.push_back(new SoftmaxLayer());
 
     // Asignar optimizador a las capas con pesos
