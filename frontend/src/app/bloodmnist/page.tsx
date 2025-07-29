@@ -48,9 +48,9 @@ const BloodMNISTPage = () => {
         throw new Error(errorData.error || 'Error en la predicción del modelo.');
       }
 
+      
       const data = await response.json();
-      setPrediction(data.prediction);
-      setConfidence(data.confidence);
+      setPrediction(data.digits?.[0] ?? null);
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error inesperado.');
     } finally {
@@ -125,20 +125,15 @@ const BloodMNISTPage = () => {
             </div>
 
             {/* Results */}
-            {prediction && (
+            {prediction !== null && (
               <div className="w-full max-w-md">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                  <h3 className="text-lg font-semibold text-red-800 mb-2">
-                    Resultado de la Clasificación
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <h3 className="text-lg font-semibold text-green-800 mb-2">
+                    Resultado de la Predicción
                   </h3>
-                  <div className="text-2xl font-bold text-red-700 mb-2">
+                  <div className="text-4xl font-bold text-green-700 mb-2">
                     {prediction}
                   </div>
-                  {confidence !== null && (
-                    <p className="text-sm text-red-600">
-                      Confianza: {(confidence * 100).toFixed(1)}%
-                    </p>
-                  )}
                 </div>
               </div>
             )}
@@ -194,27 +189,27 @@ const BloodMNISTPage = () => {
                     </tr>
                     <tr className="border-b">
                       <th className="px-4 py-2 font-medium">Loss</th>
-                      <td className="px-4 py-2">0.7977</td>
+                      <td className="px-4 py-2">0.7262</td>
                     </tr>
                     <tr className="border-b">
                       <th className="px-4 py-2 font-medium">Accuracy</th>
-                      <td className="px-4 py-2">70.5104%</td>
+                      <td className="px-4 py-2">75.1954%</td>
                     </tr>
                     <tr className="border-b">
                       <th className="px-4 py-2 font-medium">F1 Score (macro)</th>
-                      <td className="px-4 py-2">0.6884</td>
+                      <td className="px-4 py-2">0.7395</td>
                     </tr>
                     <tr className="border-b">
                       <th className="px-4 py-2 font-medium">F1 Score (weighted)</th>
-                      <td className="px-4 py-2">0.7065</td>
+                      <td className="px-4 py-2">0.7517</td>
                     </tr>
                     <tr className="border-b">
                       <th className="px-4 py-2 font-medium">Precision (macro)</th>
-                      <td className="px-4 py-2">0.6836</td>
+                      <td className="px-4 py-2">0.7561</td>
                     </tr>
                     <tr>
                       <th className="px-4 py-2 font-medium">Recall (macro)</th>
-                      <td className="px-4 py-2">0.6960</td>
+                      <td className="px-4 py-2">0.7292</td>
                     </tr>
                   </tbody>
                 </table>

@@ -51,9 +51,9 @@ const FashionMNISTPage = () => {
         throw new Error(errorData.error || 'Error en la predicción del modelo.');
       }
 
+
       const data = await response.json();
-      setPrediction(data.prediction);
-      setConfidence(data.confidence);
+      setPrediction(data.digits?.[0] ?? null);
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error inesperado.');
     } finally {
@@ -126,20 +126,15 @@ const FashionMNISTPage = () => {
             </div>
 
             {/* Results */}
-            {prediction && (
+            {prediction !== null && (
               <div className="w-full max-w-md">
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
-                  <h3 className="text-lg font-semibold text-purple-800 mb-2">
-                    Resultado de la Clasificación
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <h3 className="text-lg font-semibold text-green-800 mb-2">
+                    Resultado de la Predicción
                   </h3>
-                  <div className="text-2xl font-bold text-purple-700 mb-2">
+                  <div className="text-4xl font-bold text-green-700 mb-2">
                     {prediction}
                   </div>
-                  {confidence !== null && (
-                    <p className="text-sm text-purple-600">
-                      Confianza: {(confidence * 100).toFixed(1)}%
-                    </p>
-                  )}
                 </div>
               </div>
             )}

@@ -1,112 +1,89 @@
 import { NextResponse } from 'next/server';
-import { writeFile, unlink } from 'fs/promises';
+import { writeFile, readdir, unlink, mkdir } from 'fs/promises';
 import { spawn } from 'child_process';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import sharp from 'sharp';
+import fs from 'fs';
 
 export async function POST(request: Request) {
+  const customImagesDir = path.join(process.cwd(), '../custom_images');
   let tempImagePath: string | null = null;
-  
+
   try {
     const { imageData } = await request.json();
-    
-    if (!imageData) {
+
+    if (!imageData || !imageData.startsWith('data:image/png;base64,')) {
       return NextResponse.json(
-        { error: 'No se proporcionaron datos de imagen.' }, 
+        { error: 'Formato de imagen inválido o no proporcionado.' },
         { status: 400 }
       );
     }
 
-    // Validate base64 image data
-    if (!imageData.startsWith('data:image/')) {
-      return NextResponse.json(
-        { error: 'Formato de imagen inválido. Se requiere una imagen válida en base64.' }, 
-        { status: 400 }
-      );
-    }
+    // Asegurarse que la carpeta custom_images exista
+    await mkdir(customImagesDir, { recursive: true });
 
-    // Extract base64 data and determine file extension
-    const matches = imageData.match(/^data:image\/([a-zA-Z]*);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      return NextResponse.json(
-        { error: 'Formato de imagen base64 inválido.' }, 
-        { status: 400 }
-      );
-    }
-
-    const imageType = matches[1];
-    const base64Data = matches[2];
-    
-    // Create temporary file for the image
     const tempId = randomUUID();
-    tempImagePath = path.join('/tmp', `bloodmnist_input_${tempId}.${imageType}`);
-    
-    // Write image to temporary file
-    await writeFile(tempImagePath, base64Data, 'base64');
+    const imageFileName = `mnist_input_${tempId}.png`;
+    const originalImagePath = path.join(customImagesDir, `original_${imageFileName}`);
+    const resizedImagePath = path.join(customImagesDir, imageFileName);
 
-    // TODO: Replace this section with your actual C++ BloodMNIST model inference
-    // Example of how you might call your C++ inference binary:
-    /*
-    const modelPath = '/path/to/your/bloodmnist_model.bin';
-    const inferenceResult = await runCppInference(modelPath, tempImagePath, 'bloodmnist');
-    */
+    // Guardar imagen original
+    const base64Data = imageData.replace(/^data:image\/png;base64,/, '');
+    await writeFile(originalImagePath, base64Data, 'base64');
 
-    // For now, we'll simulate the inference with a random prediction
-    const simulatedPrediction = await simulateBloodMNISTInference();
-    
-    return NextResponse.json({
-      prediction: simulatedPrediction.cellType,
-      confidence: simulatedPrediction.confidence
-    });
-    
+    // Redimensionar a 28x28 y convertir a escala de grises
+    await sharp(originalImagePath)
+      .resize(28, 28)
+      .flatten({ background: { r: 0, g: 0, b: 0 } })
+      .grayscale()
+      .negate()
+      .toFile(resizedImagePath);
+
+    tempImagePath = resizedImagePath;
+
+    console.log(`🖼️ Imagen procesada: ${tempImagePath}`);
+
+    // Ejecutar script C++
+    const result = await runCppShellScript(tempImagePath);
+
+    return NextResponse.json(result);
+
   } catch (error: any) {
-    console.error('Error en la API de predicción BloodMNIST:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor.' }, 
-      { status: 500 }
-    );
+    console.error('Error en la API de predicción MNIST:', error);
+    return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
+
   } finally {
-    // Clean up temporary file
-    if (tempImagePath) {
-      try {
-        await unlink(tempImagePath);
-      } catch (cleanupError) {
-        console.warn('No se pudo eliminar el archivo temporal:', cleanupError);
-      }
+    // Limpiar todos los archivos de custom_images (pero no la carpeta)
+    try {
+      const files = await readdir(customImagesDir);
+      const unlinkPromises = files.map(file =>
+        unlink(path.join(customImagesDir, file)).catch(err =>
+          console.warn(`⚠️ No se pudo eliminar ${file}:`, err)
+        )
+      );
+      await Promise.all(unlinkPromises);
+      console.log('🧹 Archivos temporales eliminados de custom_images/');
+    } catch (err) {
+      console.warn('⚠️ No se pudo limpiar custom_images:', err);
     }
   }
 }
 
-// Simulated BloodMNIST inference function - replace this with your actual model call
-async function simulateBloodMNISTInference(): Promise<{ cellType: string; confidence: number }> {
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 1200 + Math.random() * 1800));
-  
-  // Blood cell types in BloodMNIST dataset
-  const bloodCellTypes = [
-    'Basophil', 'Eosinophil', 'Erythroblast', 'Immature Granulocytes',
-    'Lymphocyte', 'Monocyte', 'Neutrophil', 'Platelet'
-  ];
-  
-  // Return random prediction for demonstration
-  const cellType = bloodCellTypes[Math.floor(Math.random() * bloodCellTypes.length)];
-  const confidence = 0.70 + Math.random() * 0.30; // Random confidence between 70-100%
-  
-  return { cellType, confidence };
-}
-
-// Example function for calling your C++ inference binary
-// Uncomment and modify this when you're ready to integrate your actual BloodMNIST model
-/*
-async function runCppInference(modelPath: string, imagePath: string, dataset: string): Promise<{ cellType: string; confidence: number }> {
+async function runCppShellScript(imagePath: string): Promise<{ digits: number[]; count: number }> {
   return new Promise((resolve, reject) => {
-    // Example command - adjust according to your C++ binary interface
-    const child = spawn('./your_bloodmnist_inference_binary', [
-      '--model', modelPath,
-      '--input', imagePath,
-      '--dataset', dataset,
-      '--output', 'json'
-    ]);
+    const scriptPath = path.join(process.cwd(), '../run.sh');
+
+    console.log('🚀 Ejecutando script:', scriptPath);
+
+    // Modo: predict (no entrenar), dataset: mnist, epocas: 0, sin recompilar
+    const child = spawn('bash', [scriptPath, 'main', 'bloodmnist', 'predict', '0', '--no-build'], {
+      cwd: path.join(process.cwd(), '..'),
+      env: {
+        ...process.env,
+        INPUT_IMAGE: imagePath  // <- imagen enviada por entorno
+      }
+    });
 
     let stdout = '';
     let stderr = '';
@@ -121,26 +98,35 @@ async function runCppInference(modelPath: string, imagePath: string, dataset: st
 
     child.on('close', (code) => {
       if (code !== 0) {
-        reject(new Error(`BloodMNIST inference failed with code ${code}: ${stderr}`));
-        return;
+        console.error('❌ Script stderr:', stderr);
+        return reject(new Error(`El script falló con código ${code}`));
       }
 
       try {
-        // Parse the output from your C++ binary
-        // Adjust this according to your binary's output format
-        const result = JSON.parse(stdout);
+        const matches = stdout
+          .split('\n')
+          .filter(line => line.includes('Imagen predicción:'))
+          .map(line => {
+            const parts = line.split(':');
+            return parts.length === 2 ? parseInt(parts[1].trim(), 10) : null;
+          })
+          .filter(val => val !== null);
+
+        if (matches.length === 0) {
+          throw new Error("No se encontraron predicciones válidas en la salida");
+        }
+
         resolve({
-          cellType: result.predicted_cell_type,
-          confidence: result.confidence
+          digits: matches,
+          count: matches.length
         });
-      } catch (parseError) {
-        reject(new Error(`Failed to parse BloodMNIST inference result: ${parseError}`));
+      } catch (err) {
+        reject(new Error(`Error al parsear salida del script:\n${stdout}\n${err}`));
       }
     });
 
     child.on('error', (error) => {
-      reject(new Error(`Failed to start BloodMNIST inference process: ${error.message}`));
+      reject(new Error(`No se pudo ejecutar el script: ${error.message}`));
     });
   });
 }
-*/
