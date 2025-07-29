@@ -199,7 +199,7 @@ Inicie el servidor de desarrollo:
 npm run dev
 ```
 
-Acceda a la interfaz en: [http://localhost:8000](http://localhost:8000)
+Acceda a la interfaz en: [http://localhost:3000](http://localhost:3000)
 
 ### Funcionalidades
 
@@ -258,38 +258,9 @@ Asegúrese de que el archivo de modelo correspondiente (por ejemplo, `model_mnis
    npm run dev
    ```
 
-4. Acceda a [http://localhost:8000](http://localhost:3000) para visualizar resultados o realizar predicciones con imágenes personalizadas.
-
+4. Acceda a [http://localhost:3000](http://localhost:3000) para visualizar resultados o realizar predicciones con imágenes personalizadas.
 
 ---
-### General
-![Arquitectura VTCNN](img/web.png)
-
-Vista principal con acceso a cada dataset y resumen del modelo.
-
-### MNIST
-![Arquitectura VTCNN](img/webmnist.png)
-
-Resultados del modelo sobre dígitos escritos a mano:
-- Precisión y pérdida por época.
-- Matriz de confusión.
-- Ejemplos de predicciones.
-
-### FashionMNIST
-![Arquitectura VTCNN](img/webfashion.png)
-
-Resultados sobre imágenes de ropa:
-- Métricas de entrenamiento y validación.
-- Ejemplos visuales.
-
-### BloodMNIST
-![Arquitectura VTCNN](img/webblood.png)
-
-Resultados sobre células sanguíneas:
-- Precisión por clase.
-- Matriz de confusión.
-- Visualización médica.
-
 
 ## Limpieza
 
@@ -301,4 +272,28 @@ rm -rf build/
 
 ---
 
+## Extensiones Potenciales
 
+Se podrían implementar las siguientes mejoras:
+- Tokenización recurrente para una extracción de características mejorada.
+- Codificación posicional para las capas de transformadores.
+- Soporte para tareas de Respuesta Visual a Preguntas (VQA) o segmentación de imágenes.
+- Exportación de modelos al formato ONNX.
+- Interfaz de usuario mejorada para la carga y configuración de modelos.
+
+---
+
+## Resolución de Problemas
+
+- **Fallo de Segmentación**: Si ocurre un fallo de segmentación durante el entrenamiento:
+  - Verifique que los archivos de datos (por ejemplo, `blood_data/val-images-idx3-ubyte`) sean válidos y cumplan con el formato de 28×28 en escala de grises.
+  - Asegúrese de que los parámetros del modelo (como `image_channels`, `input_dim`) sean compatibles con el conjunto de datos.
+  - Compile con depuración: `g++ -g -o main main.cpp [otros archivos]` y ejecute en `gdb` para identificar el punto de fallo.
+- **Modelos Faltantes**: Confirme que el archivo `.bin` correspondiente esté en `save_models/` para el modo `predict`.
+- **Problemas con CUDA**: Verifique la instalación de CUDA Toolkit y la compatibilidad de la GPU si usa `--cuda`.
+
+---
+
+## Créditos
+
+Desarrollado por [Su Nombre]. Este proyecto integra un backend personalizado en C++, transformadores visuales y un frontend moderno basado en Next.js para ofrecer una solución completa de clasificación de imágenes.
