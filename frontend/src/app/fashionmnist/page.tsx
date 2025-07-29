@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import ImageUpload, { ImageUploadRef } from '../../components/ImageUpload';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const FashionMNISTPage = () => {
   const imageUploadRef = useRef<ImageUploadRef>(null);
@@ -10,17 +11,22 @@ const FashionMNISTPage = () => {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
 
   const fashionItems = [
     'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
     'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot'
   ];
 
+  const handleImageClick = (src: string, alt: string) => {
+    setSelectedImage({ src, alt });
+  };
+
   const handlePredict = async () => {
     if (!imageUploadRef.current) return;
-    
+
     const imageData = imageUploadRef.current.getImageData();
-    
+
     if (!imageData) {
       setError('Por favor, selecciona una imagen de ropa o accesorio para clasificar.');
       return;
@@ -66,11 +72,11 @@ const FashionMNISTPage = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4 transition-colors"
           >
             ← Volver al inicio
@@ -84,12 +90,12 @@ const FashionMNISTPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row gap-12">
           <div className="flex flex-col items-center space-y-6">
-            
+
             {/* Image Upload */}
             <div className="text-center w-full">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
                 Selecciona una imagen de ropa o accesorio
               </h2>
               <ImageUpload ref={imageUploadRef} maxSizeMB={10} />
@@ -97,13 +103,13 @@ const FashionMNISTPage = () => {
 
             {/* Action Buttons */}
             <div className="flex space-x-4">
-              <button 
+              <button
                 onClick={handleClear}
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 font-medium"
               >
                 Limpiar Todo
               </button>
-              <button 
+              <button
                 onClick={handlePredict}
                 disabled={loading}
                 className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
@@ -169,10 +175,92 @@ const FashionMNISTPage = () => {
                 </div>
               </div>
             </div>
+
+          </div>
+          {/* Model Performance Section */}
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              Desempeño del Modelo
+            </h2>
+            <div className="space-y-6">
+              {/* Metrics */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Métricas de Evaluación
+                </h3>
+                <table className="min-w-full text-sm text-left text-gray-700">
+                  <tbody className="bg-white border border-gray-200 rounded-lg">
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">Tipo</th>
+                      <td className="px-4 py-2">TEST Evaluation</td>
+                    </tr>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">Loss</th>
+                      <td className="px-4 py-2">0.3662</td>
+                    </tr>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">Accuracy</th>
+                      <td className="px-4 py-2">87.0707%</td>
+                    </tr>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">F1 Score (macro)</th>
+                      <td className="px-4 py-2">0.8697</td>
+                    </tr>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">F1 Score (weighted)</th>
+                      <td className="px-4 py-2">0.8697</td>
+                    </tr>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 font-medium">Precision (macro)</th>
+                      <td className="px-4 py-2">0.8706</td>
+                    </tr>
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Recall (macro)</th>
+                      <td className="px-4 py-2">0.8707</td>
+                    </tr>
+                  </tbody>
+                </table>
+                {/* Images */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { src: '/fashion/confusion-matrix.png', alt: 'Matriz de Confusión', title: 'Matriz de Confusión' },
+                    { src: '/fashion/metrics-class.png', alt: 'Métricas por Clase', title: 'Métricas por Clase' },
+                    { src: '/fashion/loss-curve.png', alt: 'Curva de Pérdida', title: 'Curva de Pérdida' },
+                    { src: '/fashion/accuracy-curve.png', alt: 'Curva de Precisión', title: 'Curva de Precisión' },
+                  ].map((image, index) => (
+                    <Dialog key={index}>
+                      <DialogTrigger asChild>
+                        <div
+                          className="flex flex-col items-center cursor-pointer"
+                          onClick={() => handleImageClick(image.src, image.alt)}
+                        >
+                          <p className="mt-2 text-md font-bold text-gray-600">{image.title}</p>
+                          <img
+                            src={image.src}
+                            alt={image.alt}
+                            className="w-full h-auto rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200"
+                          />
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl min-w-4xl p-6">
+                        <DialogHeader>
+                          <DialogTitle className='text-center'>{image.title}</DialogTitle>
+                        </DialogHeader>
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          className="w-full h-auto rounded-lg"
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </main>
+    </main >
   );
 };
 
